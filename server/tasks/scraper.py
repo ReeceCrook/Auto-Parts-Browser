@@ -27,6 +27,7 @@ def scrape_links(search):
                         "Chrome/98.0.4758.102 Safari/537.36"
         context = browser.new_context(user_agent=user_agent, bypass_csp=True)
         page = context.new_page()
+        
         def safe_goto(page, url):
                 for attempt in range(3):
                     try:

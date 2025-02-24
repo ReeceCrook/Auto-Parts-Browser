@@ -7,8 +7,19 @@ name = "pypi"
 flask = "*"
 sqlalchemy = "*"
 playwright = "*"
+flask-cors = "*"
+flask-bcrypt = "*"
+flask-migrate = "*"
+flask-restful = "*"
+flask-sqlalchemy = "*"
+python-dotenv = "*"
+sqlalchemy-serializer = "*"
+celery = "*"
+flower = "*"
+playwright-stealth = "*"
+pyvirtualdisplay = "*"
 
 [dev-packages]
 
 [requires]
-python_version = "3.8"
+python_version = "*"

@@ -47,7 +47,7 @@ def create_app():
             "state": task_result.state,
             "result": task_result.result
         }
-        return jsonify(response)
+        return jsonify(response), 200
 
 
     return app

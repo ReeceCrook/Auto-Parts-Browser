@@ -12,3 +12,4 @@ class Config:
     CELERY_RESULT_BACKEND = 'rpc://'
     CELERY_IMPORTS = ("tasks.scraper",)
     broker_connection_retry_on_startup = True
+    CELERY_TRACK_STARTED=True

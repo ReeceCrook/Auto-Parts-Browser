@@ -1,7 +1,10 @@
 import time
 from playwright.sync_api import sync_playwright
 from celery_app import celery
+from time_tracker import timer
 
+
+@timer
 def scrape_links(search):
     
     links = [f"https://www.oreillyauto.com/search?q={search}", f"https://shop.advanceautoparts.com/web/SearchResults?searchTerm={search}"]
@@ -68,8 +71,8 @@ def scrape_links(search):
                 #Only getting prices until I get the basic project setup done, will be the whole listing
                 page.wait_for_selector(".css-iib095", timeout=60000)
                 elements = page.query_selector_all(".css-iib095")
-                data["labels"] = [element.get_attribute("aria-label") for element in elements]
-                data["total_labels"] = len(data["labels"])
+                data["prices"] = [element.get_attribute("aria-label") for element in elements]
+                data["total_prices"] = len(data["prices"])
             results.append(data)
         browser.close()
     return results

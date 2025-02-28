@@ -18,6 +18,8 @@ celery = "*"
 flower = "*"
 playwright-stealth = "*"
 pyvirtualdisplay = "*"
+fake-useragent = "*"
+redis = "*"
 
 [dev-packages]
 

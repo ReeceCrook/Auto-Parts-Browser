@@ -5,7 +5,7 @@ from flask_migrate import Migrate
 from flask_sqlalchemy import SQLAlchemy
 from flask_restful import Api
 
-from config import Config
+from .config import Config
 
 
 db = SQLAlchemy()
@@ -27,25 +27,41 @@ def create_app():
 
     @app.route('/scrape/<search>', methods=['GET'])
     def scrape(search):
-        from celery_app import celery
-        from tasks.scraper import run_scrape
-        task = run_scrape.delay(search)
-        task_result = celery.AsyncResult(task.id)
+        from .Helpers.parallel_scrape_helper import run_parallel_scrapes
+        group_result = run_parallel_scrapes(search)
         response = {
-            "task_id": task.id,
-            "state": task_result.state,
+            "group_task_id": group_result['group_id'],
+            "individal_task_ids": group_result['task_ids'],
             "Search": search if search else None
         }
         return jsonify(response), 202
 
-    @app.route('/scrape/status/<task_id>', methods=['GET'])
-    def scrape_status(task_id):
-        from celery_app import celery
-        task_result = celery.AsyncResult(task_id)
+
+
+    @app.route('/scrape/status', methods=['POST'])
+    def scrape_status():
+        from .celery_app import celery
+        data = request.get_json()
+        group_id = data.get('group_id')
+        task_ids = data.get('task_ids', [])
+        
+        states = {}
+        results = {}
+        for task_id in task_ids:
+            async_results = celery.AsyncResult(task_id)
+            state = async_results.state
+            states[task_id] = state
+            if state == "SUCCESS":
+                results[task_id] = async_results.result
+
+
+        all_ready = all(state == "SUCCESS" for state in states.values())
+        
         response = {
-            "task_id": task_id,
-            "state": task_result.state,
-            "result": task_result.result
+            "group_id": group_id,
+            "states": states,
+            "all_ready": all_ready,
+            "results": results if all_ready else None
         }
         return jsonify(response), 200
 

@@ -1,6 +1,6 @@
 from celery import Celery
-from config import Config
-from app import create_app
+from .config import Config
+from .app import create_app
 
 
 def create_celery(app):

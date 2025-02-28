@@ -9,7 +9,7 @@ class Config:
     SESSION_COOKIE_SAMESITE = 'Lax'
     JSON_COMPACT = False
     CELERY_BROKER_URL = 'pyamqp://guest@localhost//'
-    CELERY_RESULT_BACKEND = 'rpc://'
-    CELERY_IMPORTS = ("tasks.scraper",)
+    CELERY_RESULT_BACKEND = 'redis://localhost:6379/0'
+    CELERY_IMPORTS = ("server.tasks.advance_scraper", "server.tasks.oreilly_scraper",)
     broker_connection_retry_on_startup = True
     CELERY_TRACK_STARTED=True

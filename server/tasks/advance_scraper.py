@@ -23,9 +23,9 @@ async def async_scrape_advance(search):
         scrape_start = time.time()
         await safe_goto(page, url)
 
-        await page.wait_for_selector(".css-iib095", timeout=60000)
-        elements = await page.query_selector_all(".css-iib095")
-        data["prices"] = [await element.get_attribute("aria-label") for element in elements]
+        await page.wait_for_selector(".css-13pqr4x", timeout=60000)
+        elements = await page.query_selector_all(".css-13pqr4x")
+        data["prices"] = [await element.evaluate("el => el.outerHTML") for element in elements]
         data["total_prices"] = len(data["prices"])
         time_taken = time.time() - scrape_start
         data["time_taken"] = f"{time_taken:.2f}"

@@ -1,4 +1,6 @@
-from flask import Flask, request, session, make_response, jsonify
+import time
+import json
+from flask import Flask, request, session, Response, jsonify
 from flask_cors import CORS
 from flask_bcrypt import Bcrypt
 from flask_migrate import Migrate
@@ -65,9 +67,50 @@ def create_app():
         }
         return jsonify(response), 200
 
+    @app.route('/scrape/stream', methods=['GET'])
+    def stream():
+        # Get group_id and task_ids from query parameters
+        group_id = request.args.get('group_id')
+        # For multiple task_ids, you can pass them as repeated query parameters (e.g., ?task_id=1&task_id=2)
+        task_ids = request.args.getlist('task_id')
+        from .celery_app import celery
+
+        def event_stream():
+            while True:
+                states = {}
+                results = {}
+                for task_id in task_ids:
+                    async_results = celery.AsyncResult(task_id)
+                    state = async_results.state
+                    states[task_id] = state
+                    if state == "SUCCESS":
+                        results[task_id] = async_results.result
+
+                # Build the message
+                if all(state == "SUCCESS" for state in states.values()):
+                    message = {
+                        "group_id": group_id,
+                        "states": states,
+                        "results": results,
+                        "all_ready": True
+                    }
+                    # Yield the final message and then break the loop
+                    yield f"data: {json.dumps(message)}\n\n"
+                    break
+                else:
+                    message = {
+                        "group_id": group_id,
+                        "states": states,
+                        "all_ready": False
+                    }
+                    yield f"data: {json.dumps(message)}\n\n"
+                # Pause briefly before the next status check
+                time.sleep(1)
+
+        # Return a streaming response with the appropriate MIME type
+        return Response(event_stream(), mimetype="text/event-stream")
 
     return app
-
 
 
 

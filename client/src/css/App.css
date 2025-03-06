@@ -41,3 +41,8 @@
 .css-16w1p0l {
   max-width: 30%;
 }
+
+.GooglesPlacesMapContainer {
+  height: 400px;
+  width: 100%;
+}

@@ -1,10 +1,13 @@
 import '../css/App.css';
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import ScrapeStatus from './ScrapeStatus';
+import PlacesMap from './PlacesMap';
 
 function App() {
   const [formData, setFormData] = useState([])
   const [response, setResponse] = useState({})
+  const [selectedPlace, setSelectedPlace] = useState(null);
+  const [coordinates, setCoordinates] = useState(null)
 
   function handleSubmit(e) {
     e.preventDefault()
@@ -20,10 +23,13 @@ function App() {
   }
 
  
-
+  console.log(coordinates);
   console.log(formData, "<== formData || Response ==>", response)
   return (
     <div className="App">
+      <div className='GooglesPlacesMapContainer'>
+        <PlacesMap selectedPlace={selectedPlace} setSelectedPlace={setSelectedPlace} />
+      </div>
       <header className="App-header">
         Auto Parts Browser
         <form onSubmit={(e) => handleSubmit(e)}>

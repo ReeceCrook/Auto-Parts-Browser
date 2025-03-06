@@ -20,6 +20,7 @@ playwright-stealth = "*"
 pyvirtualdisplay = "*"
 fake-useragent = "*"
 redis = "*"
+requests = "*"
 
 [dev-packages]
 

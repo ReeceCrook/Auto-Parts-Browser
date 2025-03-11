@@ -21,6 +21,7 @@ pyvirtualdisplay = "*"
 fake-useragent = "*"
 redis = "*"
 requests = "*"
+googlemaps = "*"
 
 [dev-packages]
 

@@ -3,7 +3,7 @@ from ..tasks import scrape_oreilly, scrape_advance
 
 def run_parallel_scrapes(search):
     job = group(
-        # scrape_oreilly.s(search),
+        scrape_oreilly.s(search),
         scrape_advance.s(search)
     )
     group_result = job.apply_async()

@@ -5,14 +5,16 @@ from ..Helpers.time_tracker import timer
 from ..Helpers.safe_goto import safe_goto
 from ..Helpers.browser_helper import launch_browser
 from ..Helpers.random_context import get_random_context_params
+from celery.utils.log import get_task_logger
 
-
-@celery.task(name="tasks.scrape_advance")
+logger = get_task_logger(__name__)
+@celery.task(name="tasks.scrape_advance", soft_time_limit=300, time_limit=310, acks_late=True)
 @timer
 def scrape_advance(search):
     return asyncio.run(async_scrape_advance(search))
 
 async def async_scrape_advance(search):
+    logger.info(f"Starting scrape_advance for search term: {search}")
     advance_results = []
     user_agent, viewport = get_random_context_params()
     browser, context = await launch_browser(user_agent=user_agent, viewport=viewport)
@@ -30,6 +32,10 @@ async def async_scrape_advance(search):
         time_taken = time.time() - scrape_start
         data["time_taken"] = f"{time_taken:.2f}"
         advance_results.append(data)
+        logger.info(f"Completed scrape_advance for search term: {search} in {time_taken:.2f} sec")
+    except Exception as e:
+        logger.error(f"Error in scrape_advance for search '{search}': {e}")
+        raise
     finally:
         await browser.close()
     return advance_results

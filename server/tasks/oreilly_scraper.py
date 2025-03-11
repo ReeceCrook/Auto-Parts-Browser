@@ -5,13 +5,16 @@ from ..Helpers.time_tracker import timer
 from ..Helpers.safe_goto import safe_goto
 from ..Helpers.browser_helper import launch_browser
 from ..Helpers.random_context import get_random_context_params
+from celery.utils.log import get_task_logger
 
-@celery.task(name="tasks.scrape_oreilly")
+logger = get_task_logger(__name__)
+@celery.task(name="tasks.scrape_oreilly", soft_time_limit=300, time_limit=310, acks_late=True)
 @timer
 def scrape_oreilly(search):
     return asyncio.run(async_scrape_oreilly(search))
 
 async def async_scrape_oreilly(search):
+    logger.info(f"Starting scrape_oreilly for search term: {search}")
     url = f"https://www.oreillyauto.com/search?q={search}"
     oreilly_results = []
     browser = None
@@ -42,6 +45,10 @@ async def async_scrape_oreilly(search):
         data["total_prices"] = len(data["prices"])
         data["time_taken"] = f"{time_taken:.2f}"
         oreilly_results.append(data)
+        logger.info(f"Completed scrape_oreilly for search term: {search} in {time_taken:.2f} sec ")
+    except Exception as e:
+        logger.error(f"Error in scrape_oreilly for search '{search}': {e}")
+        raise
     finally:
         if browser:
             await browser.close()

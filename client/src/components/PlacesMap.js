@@ -11,16 +11,46 @@ import {
   useAdvancedMarkerRef,
 } from "@vis.gl/react-google-maps";
 
-const API_KEY = "AIzaSyCv3Wf69VArh-8eQlJGzOGRlFpiZz4dYOU"; 
+const API_KEY = "AIzaSyCv3Wf69VArh-8eQlJGzOGRlFpiZz4dYOU";
 
-function PlacesMap({ selectedPlace, setSelectedPlace }) {
+
+function PlacesMap({ selectedPlace, setSelectedPlace, response, setResponse }) {
   const [markerRef, marker] = useAdvancedMarkerRef();
   const [radius, setRadius] = useState(50000);
+  
+  function transformPlace(place) {
+    if (!place || !place.geometry || !place.geometry.location) return null;
+    return {
+      formatted_address: place.formatted_address,
+      name: place.name,
+      location: {
+        lat: place.geometry.location.lat(),
+        lng: place.geometry.location.lng()
+      },
+      radius: radius
+    };
+  }
 
-  const handleRadiusChange = (e) => {
-    setRadius(e.target.value);
-  };
-
+  function handlePlaceSelect(place) {
+    const transformedPlace = transformPlace(place);
+    if (!transformedPlace) return;
+    setSelectedPlace(transformedPlace);
+    
+    fetch('/places', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify(transformedPlace)
+    })
+      .then((r) => {
+        if (r.ok) return r.json();
+        throw new Error('Network response was not ok');
+      })
+      .then((res) => setResponse(res))
+      .catch((error) => console.error('Error:', error));
+  }
+  
   return (
     <APIProvider
       apiKey={API_KEY}
@@ -37,14 +67,16 @@ function PlacesMap({ selectedPlace, setSelectedPlace }) {
       </Map>
       <MapControl position={ControlPosition.TOP}>
         <div className="autocomplete-control">
-          <PlaceAutocomplete onPlaceSelect={setSelectedPlace} />
+          <PlaceAutocomplete onPlaceSelect={handlePlaceSelect} />
           <div>
             <input 
               type="number" 
               placeholder="Enter radius in meters" 
               value={radius} 
-              onChange={handleRadiusChange} 
+              onChange={(e) => setRadius(e.target.value)}
             />
+          </div>
+          <div>
           </div>
         </div>
       </MapControl>
@@ -56,44 +88,44 @@ function PlacesMap({ selectedPlace, setSelectedPlace }) {
 function MapHandler({ place, marker, radius }) {
   const map = useMap();
 
-  function performGetDetails(service, placeId) {
-    const detailRequest = {
-      placeId: placeId,
-      fields: ["website"],
-    };
-    service.getDetails(detailRequest, (placeDetails, status) => {
-      if (status === google.maps.places.PlacesServiceStatus.OK) {
-        console.log(`Details for ${placeId}:`, placeDetails);
-      } else {
-        console.error("Place details request failed:", status);
-      }
-    });
-  }
+  // function performGetDetails(service, placeId) {
+  //   const detailRequest = {
+  //     placeId: placeId,
+  //     fields: ["website"],
+  //   };
+  //   service.getDetails(detailRequest, (placeDetails, status) => {
+  //     if (status === google.maps.places.PlacesServiceStatus.OK) {
+  //       console.log(`Details for ${placeId}:`, placeDetails);
+  //     } else {
+  //       console.error("Place details request failed:", status);
+  //     }
+  //   });
+  // }
     
-  function performTextSearch(map, place, radius) {
-    const location = place?.geometry?.location ? place.geometry.location : map.getCenter();
-    const service = new google.maps.places.PlacesService(map);
-    const queries = ["O'Reilly Auto Parts", "Advance Auto Parts"];
+  // function performTextSearch(map, place, radius) {
+  //   const location = place?.geometry?.location ? place.geometry.location : map.getCenter();
+  //   const service = new google.maps.places.PlacesService(map);
+  //   const queries = ["O'Reilly Auto Parts", "Advance Auto Parts"];
     
-    queries.forEach((query) => {
-      const request = {
-        query: query,
-        location: location,
-        radius: radius,
-      };
+  //   queries.forEach((query) => {
+  //     const request = {
+  //       query: query,
+  //       location: location,
+  //       radius: radius,
+  //     };
 
-      service.textSearch(request, (results, status) => {
-        if (status === google.maps.places.PlacesServiceStatus.OK) {
-          console.log(`Text search results for ${query}:`, results);
-          results.forEach((result) => {
-            performGetDetails(service, result.place_id);
-          });
-        } else {
-          console.error(`Text search failed for ${query}:`, status);
-        }
-      });
-    });
-  }
+  //     service.textSearch(request, (results, status) => {
+  //       if (status === google.maps.places.PlacesServiceStatus.OK) {
+  //         console.log(`Text search results for ${query}:`, results);
+  //         results.forEach((result) => {
+  //           performGetDetails(service, result.place_id);
+  //         });
+  //       } else {
+  //         console.error(`Text search failed for ${query}:`, status);
+  //       }
+  //     });
+  //   });
+  // }
 
   useEffect(() => {
     if (!map || !place || !marker) return;
@@ -103,7 +135,7 @@ function MapHandler({ place, marker, radius }) {
     }
     marker.position = place.geometry?.location;
 
-    performTextSearch(map, place, radius);
+    //performTextSearch(map, place, radius);
   }, [map, place, marker, radius]);
 
   return null;
@@ -111,6 +143,7 @@ function MapHandler({ place, marker, radius }) {
 
 function PlaceAutocomplete({ onPlaceSelect }) {
   const [placeAutocomplete, setPlaceAutocomplete] = useState(null);
+  const [selectedPlace, setSelectedPlace] = useState(null);
   const inputRef = useRef(null);
   const places = useMapsLibrary("places");
 
@@ -125,14 +158,18 @@ function PlaceAutocomplete({ onPlaceSelect }) {
   useEffect(() => {
     if (!placeAutocomplete) return;
     const listener = placeAutocomplete.addListener("place_changed", () => {
-      onPlaceSelect(placeAutocomplete.getPlace());
+      const place = placeAutocomplete.getPlace();
+      setSelectedPlace(place);
     });
     return () => listener.remove();
-  }, [onPlaceSelect, placeAutocomplete]);
+  }, [placeAutocomplete]);
 
   return (
     <div className="autocomplete-container">
       <input ref={inputRef} placeholder="Search for a place..." />
+      <button onClick={() => onPlaceSelect(selectedPlace)} disabled={!selectedPlace} style={{"backgroundColor": "white"}}>
+        Submit
+      </button>
     </div>
   );
 }

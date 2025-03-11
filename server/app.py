@@ -33,7 +33,7 @@ def create_app():
         group_result = run_parallel_scrapes(search)
         response = {
             "group_task_id": group_result['group_id'],
-            "individal_task_ids": group_result['task_ids'],
+            "task_id": group_result['task_ids'],
             "Search": search if search else None
         }
         return jsonify(response), 202
@@ -69,32 +69,55 @@ def create_app():
 
     @app.route('/scrape/stream', methods=['GET'])
     def stream():
-        # Get group_id and task_ids from query parameters
         group_id = request.args.get('group_id')
-        # For multiple task_ids, you can pass them as repeated query parameters (e.g., ?task_id=1&task_id=2)
         task_ids = request.args.getlist('task_id')
+        if len(task_ids) == 1 and ',' in task_ids[0]:
+            task_ids = task_ids[0].split(',')
         from .celery_app import celery
 
         def event_stream():
             while True:
                 states = {}
                 results = {}
-                for task_id in task_ids:
-                    async_results = celery.AsyncResult(task_id)
-                    state = async_results.state
-                    states[task_id] = state
-                    if state == "SUCCESS":
-                        results[task_id] = async_results.result
 
-                # Build the message
-                if all(state == "SUCCESS" for state in states.values()):
+                for task_id in task_ids:
+                    async_result = celery.AsyncResult(task_id)
+                    state = async_result.state
+                    states[task_id] = state
+
+                    if state == "SUCCESS":
+                        res = async_result.result
+
+                        if isinstance(res, list):
+                            nested_states = {}
+                            nested_results = {}
+                            for nested_id in res:
+                                nested_async = celery.AsyncResult(nested_id)
+                                nested_state = nested_async.state
+                                nested_states[nested_id] = nested_state
+                                if nested_state == "SUCCESS":
+                                    nested_results[nested_id] = nested_async.result
+                            if all(s == "SUCCESS" for s in nested_states.values()):
+                                results[task_id] = nested_results
+                            else:
+                                results[task_id] = res
+                        elif isinstance(res, str) and "-" in res:
+                            nested_async = celery.AsyncResult(res)
+                            if nested_async.state == "SUCCESS":
+                                results[task_id] = nested_async.result
+                            else:
+                                results[task_id] = res
+                        else:
+                            results[task_id] = res
+
+                all_ready = all(state == "SUCCESS" for state in states.values())
+                if all_ready:
                     message = {
                         "group_id": group_id,
                         "states": states,
                         "results": results,
                         "all_ready": True
                     }
-                    # Yield the final message and then break the loop
                     yield f"data: {json.dumps(message)}\n\n"
                     break
                 else:
@@ -104,11 +127,31 @@ def create_app():
                         "all_ready": False
                     }
                     yield f"data: {json.dumps(message)}\n\n"
-                # Pause briefly before the next status check
                 time.sleep(1)
 
-        # Return a streaming response with the appropriate MIME type
         return Response(event_stream(), mimetype="text/event-stream")
+
+
+
+
+
+    
+    @app.route('/places', methods=['POST'])
+    def fetch_places():
+        data = request.get_json()
+        location_data = data.get("location", {})
+        lat = location_data.get("lat")
+        lng = location_data.get("lng")
+        if lat is None or lng is None:
+            return jsonify({"error": "Invalid location data"}), 400
+        location_tuple = (lat, lng)
+        radius = data.get("radius")
+        queries = ["O'Reilly Auto Parts", "Advance Auto Parts"]
+        
+        from .tasks.get_places import fetch_places_and_details
+        task = fetch_places_and_details.delay(location_tuple, radius, queries)
+        return jsonify({"task_id": task.id}), 202
+
 
     return app
 

@@ -9,13 +9,13 @@ from celery.utils.log import get_task_logger
 
 logger = get_task_logger(__name__)
 @celery.task(name="tasks.scrape_oreilly", soft_time_limit=300, time_limit=310, acks_late=True)
-@timer
+#@timer
 def scrape_oreilly(search):
     return asyncio.run(async_scrape_oreilly(search))
 
 async def async_scrape_oreilly(search):
     logger.info(f"Starting scrape_oreilly for search term: {search}")
-    url = f"https://www.oreillyauto.com/search?q={search}"
+    url = f"https://locations.oreillyauto.com/co/fountain/autoparts-5803.html"
     oreilly_results = []
     browser = None
     try:
@@ -24,15 +24,29 @@ async def async_scrape_oreilly(search):
         page = await context.new_page()
             
         scrape_start = time.time()
-        await safe_goto(page, url)
-        data = {"url": url, "title": await page.title()}
 
-        await page.wait_for_selector(".pricing_price", timeout=60000)
+        await safe_goto(page, url)
+        ele = await page.wait_for_selector(".js-shop-now.show-desktop.show-tablet", timeout=60000)
+        await ele.click(timeout=60000)
+
+
+        await safe_goto(page, f"https://www.oreillyauto.com/search?q={search}")
+        selector = (
+            '.header-icon-button-text--desktop '
+            '.header-icon-button-text__bottom span[data-v-7e50474f][data-v-0da0b630]'
+        )
+        await page.wait_for_selector(selector, timeout=60000)
+        location_element = await page.query_selector(selector)
+        location_text = (await location_element.inner_text()).strip()
+
+        data = {"url": url, "title": await page.title(), "store": location_text}
+
+        await page.wait_for_selector('article.product.product--plp.product--interchange.js-product[role="article"]', timeout=60000)
                             
         # The below section of code is needed due to oreillyauto's lazy loading
         prev_count = 0
         while True:
-            elements = await page.query_selector_all(".pricing_price")
+            elements = await page.query_selector_all('article.product.product--plp.product--interchange.js-product[role="article"]')
             await page.evaluate("window.scrollTo(0, document.body.scrollHeight)")
             await page.wait_for_timeout(500)
             count = len(elements)

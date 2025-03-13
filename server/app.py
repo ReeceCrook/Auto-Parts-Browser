@@ -39,7 +39,6 @@ def create_app():
         return jsonify(response), 202
 
 
-
     @app.route('/scrape/status', methods=['POST'])
     def scrape_status():
         from .celery_app import celery
@@ -67,6 +66,7 @@ def create_app():
         }
         return jsonify(response), 200
 
+
     @app.route('/scrape/stream', methods=['GET'])
     def stream():
         group_id = request.args.get('group_id')
@@ -88,27 +88,25 @@ def create_app():
                     if state == "SUCCESS":
                         res = async_result.result
 
-                        if isinstance(res, list):
-                            nested_states = {}
-                            nested_results = {}
-                            for nested_id in res:
-                                nested_async = celery.AsyncResult(nested_id)
-                                nested_state = nested_async.state
-                                nested_states[nested_id] = nested_state
-                                if nested_state == "SUCCESS":
-                                    nested_results[nested_id] = nested_async.result
-                            if all(s == "SUCCESS" for s in nested_states.values()):
-                                results[task_id] = nested_results
+                        if isinstance(res, list) and res:
+                            # Check if the list items are dictionaries, indicating final results, not nested task IDs.
+                            if all(isinstance(item, dict) for item in res):
+                                results[task_id] = res  # Directly assign the result list.
                             else:
-                                results[task_id] = res
-                        elif isinstance(res, str) and "-" in res:
-                            nested_async = celery.AsyncResult(res)
-                            if nested_async.state == "SUCCESS":
-                                results[task_id] = nested_async.result
-                            else:
-                                results[task_id] = res
-                        else:
-                            results[task_id] = res
+                                # Otherwise assume it’s a list of nested task IDs.
+                                nested_states = {}
+                                nested_results = {}
+                                for nested_id in res:
+                                    nested_async = celery.AsyncResult(nested_id)
+                                    nested_state = nested_async.state
+                                    nested_states[nested_id] = nested_state
+                                    if nested_state == "SUCCESS":
+                                        nested_results[nested_id] = nested_async.result
+                                if all(s == "SUCCESS" for s in nested_states.values()):
+                                    results[task_id] = nested_results
+                                else:
+                                    results[task_id] = res
+
 
                 all_ready = all(state == "SUCCESS" for state in states.values())
                 if all_ready:
@@ -132,10 +130,6 @@ def create_app():
         return Response(event_stream(), mimetype="text/event-stream")
 
 
-
-
-
-    
     @app.route('/places', methods=['POST'])
     def fetch_places():
         data = request.get_json()

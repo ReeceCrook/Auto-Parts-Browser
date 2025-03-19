@@ -23,17 +23,18 @@ def fetch_place_details(self, place_id):
 
 @celery.task(bind=True)
 def merge_results(self, detail_results, text_search_results):
-    if (isinstance(detail_results, list) and detail_results and isinstance(detail_results[0], str)):
-        unwrapped = []
-        for task_id in detail_results:
-            async_res = celery.AsyncResult(task_id)
-            unwrapped.append(async_res.result)
-        detail_results = unwrapped
+    processed_details = []
+    for d in detail_results:
+        while isinstance(d, str):
+            async_res = celery.AsyncResult(d)
+            d = async_res.result
+        processed_details.append(d)
+    detail_results = processed_details
 
     merged = {}
     for result in text_search_results:
         place_id = result.get('place_id')
-        detail = next((d for d in detail_results if d.get('place_id') == place_id), {})
+        detail = next((d for d in detail_results if isinstance(d, dict) and d.get('place_id') == place_id), {})
         result['website'] = detail.get('website')
         merged[place_id] = result
 
@@ -62,8 +63,8 @@ def fetch_places_and_details(self, location, radius, queries):
     per_query_chains = []
 
     for query in queries:
-        text_search = gmaps.places(query=query, location=location, radius=radius)
-        results = text_search.get("results", [])
+        nearby_search = gmaps.places_nearby(location=location, radius=radius, keyword=query)
+        results = nearby_search.get("results", [])
         if results:
             detail_tasks = [
                 fetch_place_details.s(result['place_id'])
@@ -86,3 +87,4 @@ def fetch_places_and_details(self, location, radius, queries):
         final_chain = chain(group_sig, combine_results.s())
         result = final_chain.apply_async()
         return result.id
+

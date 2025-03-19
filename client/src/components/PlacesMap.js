@@ -14,7 +14,7 @@ import {
 const API_KEY = "AIzaSyCv3Wf69VArh-8eQlJGzOGRlFpiZz4dYOU";
 
 
-function PlacesMap({ selectedPlace, setSelectedPlace, response, setResponse }) {
+function PlacesMap({ selectedPlace, setSelectedPlace, placesResponse, setPlacesResponse }) {
   const [markerRef, marker] = useAdvancedMarkerRef();
   const [radius, setRadius] = useState(50000);
   
@@ -47,7 +47,7 @@ function PlacesMap({ selectedPlace, setSelectedPlace, response, setResponse }) {
         if (r.ok) return r.json();
         throw new Error('Network response was not ok');
       })
-      .then((res) => setResponse(res))
+      .then((res) => setPlacesResponse(res))
       .catch((error) => console.error('Error:', error));
   }
   
@@ -88,45 +88,6 @@ function PlacesMap({ selectedPlace, setSelectedPlace, response, setResponse }) {
 function MapHandler({ place, marker, radius }) {
   const map = useMap();
 
-  // function performGetDetails(service, placeId) {
-  //   const detailRequest = {
-  //     placeId: placeId,
-  //     fields: ["website"],
-  //   };
-  //   service.getDetails(detailRequest, (placeDetails, status) => {
-  //     if (status === google.maps.places.PlacesServiceStatus.OK) {
-  //       console.log(`Details for ${placeId}:`, placeDetails);
-  //     } else {
-  //       console.error("Place details request failed:", status);
-  //     }
-  //   });
-  // }
-    
-  // function performTextSearch(map, place, radius) {
-  //   const location = place?.geometry?.location ? place.geometry.location : map.getCenter();
-  //   const service = new google.maps.places.PlacesService(map);
-  //   const queries = ["O'Reilly Auto Parts", "Advance Auto Parts"];
-    
-  //   queries.forEach((query) => {
-  //     const request = {
-  //       query: query,
-  //       location: location,
-  //       radius: radius,
-  //     };
-
-  //     service.textSearch(request, (results, status) => {
-  //       if (status === google.maps.places.PlacesServiceStatus.OK) {
-  //         console.log(`Text search results for ${query}:`, results);
-  //         results.forEach((result) => {
-  //           performGetDetails(service, result.place_id);
-  //         });
-  //       } else {
-  //         console.error(`Text search failed for ${query}:`, status);
-  //       }
-  //     });
-  //   });
-  // }
-
   useEffect(() => {
     if (!map || !place || !marker) return;
 
@@ -135,7 +96,6 @@ function MapHandler({ place, marker, radius }) {
     }
     marker.position = place.geometry?.location;
 
-    //performTextSearch(map, place, radius);
   }, [map, place, marker, radius]);
 
   return null;

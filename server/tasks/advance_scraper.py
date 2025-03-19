@@ -1,4 +1,5 @@
 import time
+import random
 import asyncio
 from ..celery_app import celery
 from ..Helpers.time_tracker import timer
@@ -8,17 +9,16 @@ from ..Helpers.random_context import get_random_context_params
 from celery.utils.log import get_task_logger
 
 logger = get_task_logger(__name__)
-@celery.task(name="tasks.scrape_advance", soft_time_limit=300, time_limit=310, acks_late=True)
-#@timer
-def scrape_advance(search):
-    return asyncio.run(async_scrape_advance(search))
+@celery.task(name="tasks.scrape_advance", queue="advance", soft_time_limit=180, time_limit=190, acks_late=True)
+def scrape_advance(search, url):
+    return asyncio.run(async_scrape_advance(search, url))
 
-async def async_scrape_advance(search):
-    logger.info(f"Starting scrape_advance for search term: {search}")
-    url = "https://stores.advanceautoparts.com/co/centennial/6701-s-potomac-st?utm_medium=local&utm_source=yext&utm_content=listing-2018-03-22&utm_campaign=aap"
+async def async_scrape_advance(search, url):
+    await asyncio.sleep(random.uniform(1, 3))
+    logger.info(f"Starting scrape_advance for search term: {search} on {url}")
     advance_results = []
     user_agent, viewport = get_random_context_params()
-    browser, context = await launch_browser(user_agent=user_agent, viewport=viewport)
+    p, browser, context = await launch_browser(user_agent=user_agent, viewport=viewport)
     try:
         page = await context.new_page()
         scrape_start = time.time()
@@ -39,10 +39,13 @@ async def async_scrape_advance(search):
         time_taken = time.time() - scrape_start
         data["time_taken"] = f"{time_taken:.2f}"
         advance_results.append(data)
-        logger.info(f"Completed scrape_advance for search term: {search} in {time_taken:.2f} sec")
+        logger.info(f"Completed scrape_advance for search term: {search} in {time_taken:.2f} sec on {url}")
     except Exception as e:
         logger.error(f"Error in scrape_advance for search '{search}': {e}")
         raise
     finally:
-        await browser.close()
+        if browser:
+            await browser.close()
+        if p:
+            await p.stop()
     return advance_results

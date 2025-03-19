@@ -1,54 +1,103 @@
 import '../css/App.css';
 import React, { useState } from "react";
-import ScrapeStatus from './ScrapeStatus';
+import ScrapeStatus from './PlacesStatus';
 import PlacesMap from './PlacesMap';
+import PlacesResults from './PlacesResults';
+import ScrapeResultsStatus from './ScrapeResultStatus';
 
 function App() {
   const [searchQuery, setSearchQuery] = useState('');
-  const [response, setResponse] = useState(null);
+  const [placesResponse, setPlacesResponse] = useState(null);
+  const [scrapeResponse, setScrapeResponse] = useState(null);
   const [selectedPlace, setSelectedPlace] = useState(null);
-  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [selectedLocations, setSelectedLocations] = useState({});
   const [error, setError] = useState(null);
+  const [SSEStatus, setSSEStatus] = useState(null);
+  console.log(selectedLocations, "SELECTED")
 
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    if (searchQuery.trim() === "") {
-      alert("Please enter search");
-      return;
-    }
-    setIsSubmitting(true);
-    setError(null);
-    try {
-      const res = await fetch(`/scrape/${encodeURIComponent(searchQuery)}`);
-      if (!res.ok) {
-        throw new Error('Network response was not ok');
+  //   if (searchQuery.trim() === "") {
+  //     alert("Please enter search");
+  //     return;
+  //   }
+
+
+  const handleLocationToggle = (placeId, result, checked) => {
+    setSelectedLocations(prev => {
+      console.log(result, "PREV", prev)
+      const updated = { ...prev };
+      if (checked) {
+        updated[placeId] = result;
+      } else {
+        delete updated[placeId];
       }
-      const data = await res.json();
-      setResponse(data);
-    } catch (err) {
-      console.error("Error fetching scrape data:", err);
-      setError(err.message);
-    } finally {
-      setIsSubmitting(false);
-    }
+      return updated;
+    });
   };
 
-  console.log(selectedPlace, '<== Selected Place');
-  console.log(searchQuery, "<== searchQuery || Response ==>", response?.task_id);
+  const handleScrapeSelected = async () => {
+    const oreilly = [];
+    const advance = [];
+    Object.values(selectedLocations).forEach(loc => {
+      if (loc.name.includes("O'Reilly")) {
+        oreilly.push(loc);
+      } else if (loc.name.includes("Advance")) {
+        advance.push(loc);
+      }
+    });
+  
+    const payload = {
+      search: searchQuery,
+      oreilly,
+      advance,
+    };
+  
+    try {
+      const res = await fetch('/scrape/selected', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload),
+      });
+      if (!res.ok) throw new Error("Scrape selected request failed");
+      const data = await res.json();
+      console.log("Scrape Selected Task IDs:", data);
+      setScrapeResponse(data);
+    } catch (err) {
+      console.error("Error submitting selected locations:", err);
+      setError(err)
+    }
+  };
+  
+  
 
   return (
     <div className="App">
+      <h1>Auto Parts Browser</h1>
       <div className="GooglesPlacesMapContainer">
         <PlacesMap 
           selectedPlace={selectedPlace} 
           setSelectedPlace={setSelectedPlace} 
-          response={response}
-          setResponse={setResponse}
+          placesResponse={placesResponse}
+          setPlacesResponse={setPlacesResponse}
         />
       </div>
-      <header className="App-header">
-        <h1>Auto Parts Browser</h1>
-        <form onSubmit={handleSubmit}>
+      <div style={{ marginTop: '20px' }}>
+        {scrapeResponse && (
+          <ScrapeResultsStatus
+            taskIds={[...(scrapeResponse.oreilly || []), ...(scrapeResponse.advance || [])]}
+            status={scrapeResponse}
+            setStatus={setScrapeResponse}
+          />
+        )}
+      </div>
+      <div className='places-wrapper'>
+        <PlacesResults 
+          response={SSEStatus} 
+          onLocationToggle={handleLocationToggle}
+          selectedLocations={selectedLocations}
+        />
+      </div>
+      <div className="search-wrapper">
+        <form>
           <label htmlFor="searchInput">Search:</label>
           <input
             id="searchInput"
@@ -58,19 +107,21 @@ function App() {
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
           />
-          <button type="submit" disabled={isSubmitting}>
-            {isSubmitting ? "Submitting..." : "Submit"}
-          </button>
         </form>
         {error && <p className="error">Error: {error}</p>}
-      </header>
+      </div>
       <div>
-        {response?.task_id ? (
+        {placesResponse?.task_id ? (
           <ScrapeStatus
-            groupId={response.group_task_id} 
-            taskId={response.task_id} 
+            groupId={placesResponse.group_task_id} 
+            taskId={placesResponse.task_id} 
+            status={SSEStatus}
+            setStatus={setSSEStatus}
           />
         ) : null}
+      </div>
+      <div style={{ textAlign: 'center', marginTop: '20px' }}>
+        <button onClick={handleScrapeSelected}>Scrape Selected Locations</button>
       </div>
     </div>
   );

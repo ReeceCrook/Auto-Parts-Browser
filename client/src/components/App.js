@@ -80,15 +80,6 @@ function App() {
           setPlacesResponse={setPlacesResponse}
         />
       </div>
-      <div style={{ marginTop: '20px' }}>
-        {scrapeResponse && (
-          <ScrapeResultsStatus
-            taskIds={[...(scrapeResponse.oreilly || []), ...(scrapeResponse.advance || [])]}
-            status={scrapeResponse}
-            setStatus={setScrapeResponse}
-          />
-        )}
-      </div>
       <div className='places-wrapper'>
         <PlacesResults 
           response={SSEStatus} 
@@ -107,8 +98,18 @@ function App() {
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
           />
+          <button onClick={handleScrapeSelected}>Scrape Selected Locations</button>
         </form>
         {error && <p className="error">Error: {error}</p>}
+      </div>
+      <div style={{ marginTop: '20px' }}>
+        {scrapeResponse && (
+          <ScrapeResultsStatus
+            taskIds={[...(scrapeResponse.oreilly || []), ...(scrapeResponse.advance || [])]}
+            status={scrapeResponse}
+            setStatus={setScrapeResponse}
+          />
+        )}
       </div>
       <div>
         {placesResponse?.task_id ? (
@@ -119,9 +120,6 @@ function App() {
             setStatus={setSSEStatus}
           />
         ) : null}
-      </div>
-      <div style={{ textAlign: 'center', marginTop: '20px' }}>
-        <button onClick={handleScrapeSelected}>Scrape Selected Locations</button>
       </div>
     </div>
   );

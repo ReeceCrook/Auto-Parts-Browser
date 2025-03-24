@@ -34,7 +34,6 @@ function ScrapeResultsStatus({ taskIds, setStatus, status }) {
     };
   }, [taskIds, setStatus]);
 
-
   function renderResults() {
     if (!status.results) return null;
     return Object.entries(status.results).map(([taskId, resultsArray]) => (
@@ -64,13 +63,13 @@ function ScrapeResultsStatus({ taskIds, setStatus, status }) {
               </p>
             )}
             <p>
-              <strong>Total Prices:</strong> {result.total_prices}
+              <strong>Total Results:</strong> {result.total_prices}
             </p>
             <p>
               <strong>Time Taken:</strong> {result.time_taken}
             </p>
             <div>
-              <strong>Prices:</strong>
+              <strong>Results:</strong>
               {result.prices.map((priceHtml, i) => (
                 <div key={i} className="price-item">
                   {parse(he.decode(priceHtml))}

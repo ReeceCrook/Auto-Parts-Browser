@@ -16,10 +16,10 @@ const API_KEY = "AIzaSyCv3Wf69VArh-8eQlJGzOGRlFpiZz4dYOU";
 
 function PlacesMap({ selectedPlace, setSelectedPlace, placesResponse, setPlacesResponse }) {
   const [markerRef, marker] = useAdvancedMarkerRef();
-  const [radius, setRadius] = useState(50000);
-  
+  const [radius, setRadius] = useState("");
   function transformPlace(place) {
     if (!place || !place.geometry || !place.geometry.location) return null;
+    const metersRadius = parseFloat(radius) * 1609.34
     return {
       formatted_address: place.formatted_address,
       name: place.name,
@@ -27,12 +27,13 @@ function PlacesMap({ selectedPlace, setSelectedPlace, placesResponse, setPlacesR
         lat: place.geometry.location.lat(),
         lng: place.geometry.location.lng()
       },
-      radius: radius
+      radius: metersRadius
     };
   }
 
   function handlePlaceSelect(place) {
     const transformedPlace = transformPlace(place);
+    console.log(transformedPlace)
     if (!transformedPlace) return;
     setSelectedPlace(transformedPlace);
     
@@ -71,7 +72,7 @@ function PlacesMap({ selectedPlace, setSelectedPlace, placesResponse, setPlacesR
           <div>
             <input 
               type="number" 
-              placeholder="Enter radius in meters" 
+              placeholder="Enter radius in miles" 
               value={radius} 
               onChange={(e) => setRadius(e.target.value)}
             />

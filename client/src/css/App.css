@@ -1,15 +1,21 @@
+:root {
+  background-color: rgb(46, 46, 46);
+  color: #ddd;
+}
+
 .App {
   text-align: center;
 }
 
 .GooglesPlacesMapContainer {
   height: 400px;
-  width: 100%;
+  width: 50%;
+  margin: auto;
 }
 
 .places-results-wrapper {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(250px, 2fr));
   gap: 20px;
   max-width: 1200px;
   margin: 0 auto;

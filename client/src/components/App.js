@@ -98,7 +98,7 @@ function App() {
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
           />
-          <button onClick={handleScrapeSelected}>Scrape Selected Locations</button>
+          <button type='button' onClick={handleScrapeSelected}>Scrape Selected Locations</button>
         </form>
         {error && <p className="error">Error: {error}</p>}
       </div>

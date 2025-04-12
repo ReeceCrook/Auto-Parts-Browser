@@ -1,11 +1,29 @@
 import '../css/App.css';
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 
 function PlacesResults({ response, onLocationToggle, selectedLocations }) {
+  const [resultText, setResultText] = useState("")
+
+  useEffect(() => {
+    if (response && response.results) {
+      const keys = Object.keys(response.results);
+      if (keys.length > 0) {
+        const firstKey = keys[0];
+        const resultValue = response.results[firstKey].results;
+        if (typeof resultValue === 'string') {
+          setResultText(resultValue);
+        } else {
+          setResultText("");
+        }
+      }
+    }
+  }, [response]);
+  
+
   return (
     <div className='places-results-wrapper'>
       <h2>Places Results</h2>
-      {response ? Object.entries(response.results).map(([taskId, result]) => (
+      {resultText !== "" ? <div>{resultText}</div> : response ? Object.entries(response.results).map(([taskId, result]) => (
         <div key={taskId} className='places-results-card'>
           <div style={{ textAlign: 'right' }}>
             <input 

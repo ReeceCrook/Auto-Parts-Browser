@@ -1,3 +1,4 @@
+import re
 import time
 import random
 import asyncio
@@ -13,6 +14,13 @@ logger = get_task_logger(__name__)
 def scrape_oreilly(search, url):
     return asyncio.run(async_scrape_oreilly(search, url))
 
+def extract_store_id(url):
+    match = re.search(r'autoparts-(\d+)\.html', url)
+    if match:
+        print(match)
+        return match.group(1)
+    return None
+
 async def async_scrape_oreilly(search, url):
     await asyncio.sleep(random.uniform(1, 3))
     logger.info(f"Starting scrape_oreilly for search term: {search} on {url}")
@@ -24,23 +32,30 @@ async def async_scrape_oreilly(search, url):
         page = await context.new_page()
             
         scrape_start = time.time()
-
+        store_id = extract_store_id(url)
+        logger.info(f"Store ID ==> {store_id}")
+        
         await safe_goto(page, url)
-        ele = await page.wait_for_selector(".js-shop-now.show-desktop.show-tablet", timeout=60000)
+        await asyncio.sleep(5)
+        ele = await page.wait_for_selector(f'a.js-shop-now[data-store-id="{store_id}"]', timeout=60000)
         await ele.click(timeout=60000)
-
+        await asyncio.sleep(5)
         await safe_goto(page, f"https://www.oreillyauto.com/search?q={search}")
+        await asyncio.sleep(5)
         selector = (
-            '.header-icon-button-text--desktop '
-            '.header-icon-button-text__bottom span[data-v-7e50474f][data-v-0da0b630]'
+            'span.header-icon-button-text--desktop:has(span.header-icon-button-text__top small:has-text("Selected Store")) '
+            'span.header-icon-button-text__bottom strong span'
         )
         await page.wait_for_selector(selector, timeout=60000)
         location_element = await page.query_selector(selector)
         location_text = (await location_element.inner_text()).strip()
+        logger.info(f"LOCATION TEXT ===> {location_text} <===")
 
+        
         data = {"url": url, "title": await page.title(), "store": location_text}
+        print(data)
 
-        await page.wait_for_selector('article.product.product--plp.product--interchange.js-product[role="article"]', timeout=60000)
+        await page.wait_for_selector('article.product.product--plp.product--interchange.js-product[role="article"]', timeout=120000)
         
         # The below section of code is needed due to oreillyauto's lazy loading                    
         prev_count = 0

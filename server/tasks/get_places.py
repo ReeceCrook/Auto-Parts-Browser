@@ -66,18 +66,23 @@ def fetch_places_and_details(self, location, radius, queries):
         nearby_search = gmaps.places_nearby(location=location, radius=radius, keyword=query)
         results = nearby_search.get("results", [])
         if results:
-            detail_tasks = [
-                fetch_place_details.s(result['place_id'])
-                for result in results if result.get('place_id')
-            ]
-            chain_sig = chain(
-                group(detail_tasks),
-                merge_results.s(text_search_results=results)
-            )
-            per_query_chains.append(chain_sig)
+            operational_results = [result for result in results if result.get("business_status") == "OPERATIONAL"]
+            if operational_results:
+                detail_tasks = [
+                    fetch_place_details.s(result['place_id'])
+                    for result in results if result.get('place_id')
+                ]
+                chain_sig = chain(
+                    group(detail_tasks),
+                    merge_results.s(text_search_results=results)
+                )
+                per_query_chains.append(chain_sig)
 
     if not per_query_chains:
-        return None
+        return {
+            "all_ready": True,
+            "results": f"No results for location: {location}, in radius: {radius}"
+         }
 
     if len(per_query_chains) == 1:
         final_result = per_query_chains[0].apply_async()

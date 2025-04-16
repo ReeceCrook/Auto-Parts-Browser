@@ -27,18 +27,6 @@ def create_app():
     api.init_app(app)
     CORS(app)
 
-    # @app.route('/scrape/<search>', methods=['GET'])
-    # def scrape(search):
-    #     from .Helpers.parallel_scrape_helper import run_parallel_scrapes
-    #     group_result = run_parallel_scrapes(search)
-    #     response = {
-    #         "group_task_id": group_result['group_id'],
-    #         "task_id": group_result['task_ids'],
-    #         "Search": search if search else None
-    #     }
-    #     return jsonify(response), 202
-
-
     @app.route('/scrape/status', methods=['POST'])
     def scrape_status():
         from .celery_app import celery
@@ -143,14 +131,6 @@ def create_app():
                     }
                     yield f"data: {json.dumps(message)}\n\n"
                     break
-                # else:
-                #     print("in all ready else", all_ready)
-                #     message = {
-                #         "group_id": group_id,
-                #         "states": states,
-                #         "all_ready": False
-                #     }
-                #     yield f"data: {json.dumps(message)}\n\n"
                 time.sleep(1)
 
         
@@ -170,10 +150,10 @@ def create_app():
         location_data = data.get("location", {})
         lat = location_data.get("lat")
         lng = location_data.get("lng")
+        radius = data.get("radius")
         if lat is None or lng is None:
             return jsonify({"error": "Invalid location data"}), 400
         location_tuple = (lat, lng)
-        radius = data.get("radius")
         queries = ["O'Reilly Auto Parts", "Advance Auto Parts"]
         
         from .tasks.get_places import fetch_places_and_details

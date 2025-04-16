@@ -1,138 +1,117 @@
 /* global google */
-import React, { useState, useEffect, useRef } from "react";
+import React, { useState, useEffect } from "react";
 import {
   APIProvider,
-  ControlPosition,
-  MapControl,
-  AdvancedMarker,
   Map,
-  useMap,
-  useMapsLibrary,
-  useAdvancedMarkerRef,
+  AdvancedMarker,
+  MapControl,
+  ControlPosition,
+  useMap
 } from "@vis.gl/react-google-maps";
+import AutoCompleteCustom from "./AutoCompleteCustom";
 
-const API_KEY = "AIzaSyCv3Wf69VArh-8eQlJGzOGRlFpiZz4dYOU";
-
+function MapController({ selectedPlace }) {
+  const map = useMap();
+  useEffect(() => {
+    const loc = selectedPlace?.geometry?.location;
+    if (!map || !loc) return;
+    if (selectedPlace.geometry.viewport) {
+      const { north, south, east, west } = selectedPlace.geometry.viewport;
+      const bounds = new google.maps.LatLngBounds(
+        { lat: south, lng: west },
+        { lat: north, lng: east }
+      );
+      map.fitBounds(bounds);
+    } else {
+      map.panTo(loc);
+      map.setZoom(14);
+    }
+  }, [map, selectedPlace]);
+  return null;
+}
 
 function PlacesMap({ selectedPlace, setSelectedPlace, placesResponse, setPlacesResponse }) {
-  const [markerRef, marker] = useAdvancedMarkerRef();
   const [radius, setRadius] = useState("");
-  function transformPlace(place) {
-    if (!place || !place.geometry || !place.geometry.location) return null;
-    const metersRadius = parseFloat(radius) * 1609.34
-    return {
-      formatted_address: place.formatted_address,
-      name: place.name,
-      location: {
-        lat: place.geometry.location.lat(),
-        lng: place.geometry.location.lng()
-      },
-      radius: metersRadius
-    };
-  }
 
-  function handlePlaceSelect(place) {
-    const transformedPlace = transformPlace(place);
-    console.log(transformedPlace)
-    if (!transformedPlace) return;
-    setSelectedPlace(transformedPlace);
-    
-    fetch('/places', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json'
-      },
-      body: JSON.stringify(transformedPlace)
-    })
-      .then((r) => {
-        if (r.ok) return r.json();
-        throw new Error('Network response was not ok');
-      })
-      .then((res) => setPlacesResponse(res))
-      .catch((error) => console.error('Error:', error));
-  }
+  const handleLocateMe = () => {
+    if (!navigator.geolocation) return;
+    navigator.geolocation.getCurrentPosition(({ coords }) => {
+      const loc = { lat: coords.latitude, lng: coords.longitude };
+      setSelectedPlace({
+        geometry: { location: loc, viewport: null },
+        name: "My Location",
+        formatted_address: null,
+        radius: parseFloat(radius || 0) * 1609.34
+      });
+    });
+  };
+
+  const handlePlaceSelect = (place) => {
+    const loc = {
+      lat: place.geometry.location.lat(),
+      lng: place.geometry.location.lng()
+    };
+    const viewport = place.geometry.viewport?.toJSON();
+    setSelectedPlace({
+      geometry: { location: loc, viewport },
+      name: place.name,
+      formatted_address: place.formatted_address,
+      radius: parseFloat(radius || 0) * 1609.34
+    });
+  };
+
+  const handleFetchPlaces = () => {
+    const loc = selectedPlace.geometry.location;
+    const metersRadius = Math.round(parseFloat(radius) * 1609.34);
+    if (!loc || !metersRadius) return;
   
+    fetch("/places", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        location: loc,
+        radius:   metersRadius
+      })
+    })
+    .then(r => r.ok ? r.json() : Promise.reject(r))
+      .then(setPlacesResponse)
+      .catch(console.error);
+  };
+  
+
   return (
-    <APIProvider
-      apiKey={API_KEY}
-      solutionChannel="GMP_devsite_samples_v3_rgmautocomplete"
-    >
+    <APIProvider apiKey="AIzaSyCv3Wf69VArh-8eQlJGzOGRlFpiZz4dYOU">
       <Map
-        mapId="bf51a910020fa25a"
+        mapId="ad030c5dd452d96c"
+        defaultCenter={{ lat: 22.5, lng: 0 }}
         defaultZoom={3}
-        defaultCenter={{ lat: 22.54992, lng: 0 }}
+        disableDefaultUI
         gestureHandling="greedy"
-        disableDefaultUI={true}
       >
-        <AdvancedMarker ref={markerRef} position={null} />
+        <MapController selectedPlace={selectedPlace} />
+
+        {selectedPlace?.geometry?.location && (
+          <AdvancedMarker
+            position={selectedPlace.geometry.location}
+          />
+        )}
       </Map>
-      <MapControl position={ControlPosition.TOP}>
-        <div className="autocomplete-control">
-          <PlaceAutocomplete onPlaceSelect={handlePlaceSelect} />
-          <div>
-            <input 
-              type="number" 
-              placeholder="Enter radius in miles" 
-              value={radius} 
-              onChange={(e) => setRadius(e.target.value)}
-            />
-          </div>
-          <div>
-          </div>
+
+      <MapControl position={ControlPosition.TOP_CENTER}>
+        <div style={{ alignItems: "center"}}>
+          <AutoCompleteCustom onPlaceSelect={handlePlaceSelect} />
+          <input
+            type="number"
+            placeholder="Miles"
+            value={radius}
+            onChange={e => setRadius(e.target.value)}
+          />
+          <button onClick={handleFetchPlaces} disabled={!selectedPlace?.geometry?.location || !radius}>Search Nearby</button>
+          <button onClick={handleLocateMe}>My Location</button>
         </div>
       </MapControl>
-      <MapHandler place={selectedPlace} marker={marker} radius={radius} />
     </APIProvider>
   );
 }
 
-function MapHandler({ place, marker, radius }) {
-  const map = useMap();
-
-  useEffect(() => {
-    if (!map || !place || !marker) return;
-
-    if (place.geometry?.viewport) {
-      map.fitBounds(place.geometry.viewport);
-    }
-    marker.position = place.geometry?.location;
-
-  }, [map, place, marker, radius]);
-
-  return null;
-}
-
-function PlaceAutocomplete({ onPlaceSelect }) {
-  const [placeAutocomplete, setPlaceAutocomplete] = useState(null);
-  const [selectedPlace, setSelectedPlace] = useState(null);
-  const inputRef = useRef(null);
-  const places = useMapsLibrary("places");
-
-  useEffect(() => {
-    if (!places || !inputRef.current) return;
-    const options = {
-      fields: ["geometry", "name", "formatted_address"],
-    };
-    setPlaceAutocomplete(new places.Autocomplete(inputRef.current, options));
-  }, [places]);
-
-  useEffect(() => {
-    if (!placeAutocomplete) return;
-    const listener = placeAutocomplete.addListener("place_changed", () => {
-      const place = placeAutocomplete.getPlace();
-      setSelectedPlace(place);
-    });
-    return () => listener.remove();
-  }, [placeAutocomplete]);
-
-  return (
-    <div className="autocomplete-container">
-      <input ref={inputRef} placeholder="Search for a place..." />
-      <button onClick={() => onPlaceSelect(selectedPlace)} disabled={!selectedPlace} style={{"backgroundColor": "white"}}>
-        Submit
-      </button>
-    </div>
-  );
-}
-
-export default PlacesMap;
+export default PlacesMap

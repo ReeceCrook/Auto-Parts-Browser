@@ -23,6 +23,11 @@ def fetch_place_details(self, place_id):
 
 @celery.task(bind=True)
 def merge_results(self, detail_results, text_search_results):
+    logger.info(f"Received detail_results of type {type(detail_results)}: {detail_results}")
+    
+    if not isinstance(detail_results, list):
+         detail_results = [detail_results]
+
     processed_details = []
     for d in detail_results:
         while isinstance(d, str):
@@ -33,14 +38,14 @@ def merge_results(self, detail_results, text_search_results):
 
     merged = {}
     for result in text_search_results:
-        place_id = result.get('place_id')
-        detail = next((d for d in detail_results if isinstance(d, dict) and d.get('place_id') == place_id), {})
-        result['website'] = detail.get('website')
-        merged[place_id] = result
+         place_id = result.get('place_id')
+         detail = next((d for d in detail_results if isinstance(d, dict) and d.get('place_id') == place_id), {})
+         result['website'] = detail.get('website')
+         merged[place_id] = result
 
     return {
-        "all_ready": True,
-        "results": merged,
+         "all_ready": True,
+         "results": merged,
     }
 
 
@@ -70,8 +75,9 @@ def fetch_places_and_details(self, location, radius, queries):
             if operational_results:
                 detail_tasks = [
                     fetch_place_details.s(result['place_id'])
-                    for result in results if result.get('place_id')
+                    for result in operational_results if result.get('place_id')
                 ]
+
                 chain_sig = chain(
                     group(detail_tasks),
                     merge_results.s(text_search_results=results)

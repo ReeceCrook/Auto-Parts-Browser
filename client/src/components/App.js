@@ -4,6 +4,7 @@ import ScrapeStatus from './PlacesStatus';
 import PlacesMap from './PlacesMap';
 import PlacesResults from './PlacesResults';
 import ScrapeResultsStatus from './ScrapeResultStatus';
+import { APIProvider } from "@vis.gl/react-google-maps";
 
 function App() {
   const [searchQuery, setSearchQuery] = useState('');
@@ -14,12 +15,6 @@ function App() {
   const [error, setError] = useState(null);
   const [SSEStatus, setSSEStatus] = useState(null);
   console.log(selectedLocations, "SELECTED")
-
-  //   if (searchQuery.trim() === "") {
-  //     alert("Please enter search");
-  //     return;
-  //   }
-
 
   const handleLocationToggle = (placeId, result, checked) => {
     setSelectedLocations(prev => {
@@ -73,12 +68,14 @@ function App() {
     <div className="App">
       <h1>Auto Parts Browser</h1>
       <div className="GooglesPlacesMapContainer">
-        <PlacesMap 
+        <APIProvider apiKey="AIzaSyCv3Wf69VArh-8eQlJGzOGRlFpiZz4dYOU">
+          <PlacesMap 
           selectedPlace={selectedPlace} 
           setSelectedPlace={setSelectedPlace} 
           placesResponse={placesResponse}
           setPlacesResponse={setPlacesResponse}
         />
+        </APIProvider>
       </div>
       <div className='places-wrapper'>
         <PlacesResults 

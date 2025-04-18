@@ -80,7 +80,7 @@ function PlacesMap({ selectedPlace, setSelectedPlace, placesResponse, setPlacesR
   
 
   return (
-    <APIProvider apiKey="AIzaSyCv3Wf69VArh-8eQlJGzOGRlFpiZz4dYOU">
+    <APIProvider apiKey="AIzaSyCv3Wf69VArh-8eQlJGzOGRlFpiZz4dYOU" libraries={['places']}>
       <Map
         mapId="ad030c5dd452d96c"
         defaultCenter={{ lat: 22.5, lng: 0 }}

@@ -68,7 +68,7 @@ function App() {
     <div className="App">
       <h1>Auto Parts Browser</h1>
       <div className="GooglesPlacesMapContainer">
-        <APIProvider apiKey="AIzaSyCv3Wf69VArh-8eQlJGzOGRlFpiZz4dYOU">
+        <APIProvider apiKey="AIzaSyCv3Wf69VArh-8eQlJGzOGRlFpiZz4dYOU" libraries={['places']}>
           <PlacesMap 
           selectedPlace={selectedPlace} 
           setSelectedPlace={setSelectedPlace} 

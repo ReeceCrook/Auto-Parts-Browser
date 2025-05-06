@@ -7,10 +7,21 @@ from ..Helpers.safe_goto import safe_goto
 from ..Helpers.browser_helper import launch_browser
 from ..Helpers.random_context import get_random_context_params
 from celery.utils.log import get_task_logger
+from celery.exceptions import SoftTimeLimitExceeded
 
 logger = get_task_logger(__name__)
-@celery.task(name="tasks.scrape_advance", queue="advance", soft_time_limit=180, time_limit=190, acks_late=True)
-def scrape_advance(search, url):
+@celery.task(
+    name="tasks.scrape_advance",
+    queue="advance",
+    soft_time_limit=90,
+    time_limit=120,
+    acks_late=True,
+    bind=True,
+    autoretry_for=(SoftTimeLimitExceeded,),
+    retry_backoff=True,
+    retry_kwargs={'max_retries': 3, 'countdown': 3},
+)
+def scrape_advance(self, search, url):
     return asyncio.run(async_scrape_advance(search, url))
 
 async def async_scrape_advance(search, url):

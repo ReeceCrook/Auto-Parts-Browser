@@ -1,78 +1,55 @@
+// src/components/ScrapeResultsStatus.js
 import React, { useEffect } from 'react';
 import parse from 'html-react-parser';
 import he from 'he';
+import '../css/ScrapeResultsStatus.css';
 
 function ScrapeResultsStatus({ taskIds, setStatus, status }) {
   useEffect(() => {
-    if (!taskIds || taskIds.length === 0) return;
-
+    if (!taskIds?.length) return;
     const params = new URLSearchParams();
     taskIds.forEach(id => params.append('task_id', id));
-
-    const eventSource = new EventSource(`/scrape/stream?${params.toString()}`);
-
-    eventSource.onmessage = event => {
-      const data = JSON.parse(event.data);
+    const es = new EventSource(`/scrape/stream?${params.toString()}`);
+    es.onmessage = e => {
+      const data = JSON.parse(e.data);
       setStatus(data);
-      if (data.all_ready === true) {
-        console.log("closing sse", data.all_ready)
-        eventSource.close();
+      if (data.all_ready) es.close();
+    };
+    es.onerror = err => {
+      if (es.readyState !== EventSource.CLOSED) {
+        console.error('SSE error:', err);
       }
     };
-
-    eventSource.onerror = err => {
-        if (eventSource.readyState === EventSource.CLOSED) {
-          console.log("EventSource connection closed as expected.");
-        } else {
-          console.error('EventSource error:', err);
-        }
-      };
-      
-
-    return () => {
-      eventSource.close();
-    };
+    return () => es.close();
   }, [taskIds, setStatus]);
 
-  function renderResults() {
+  const renderResults = () => {
     if (!status.results) return null;
-    return Object.entries(status.results).map(([taskId, resultsArray]) => (
-      <div key={taskId} style={{ marginBottom: '2rem' }}>
+    return Object.entries(status.results).map(([taskId, results]) => (
+      <div key={taskId} className="task-group">
         <h3>Task: {taskId}</h3>
-        {resultsArray.map((result, index) => (
-          <div
-            key={index}
-            style={{
-              border: '1px solid #ccc',
-              padding: '1rem',
-              marginBottom: '1rem'
-            }}
-          >
-            <p>
-              <strong>URL:</strong> {result.url}
-            </p>
-            <p>
-              <strong>Title:</strong> {result.title}
-            </p>
-            {result.store && (
+        {results.map((res, i) => (
+          <div key={i} className="result-card">
+            <p><strong>URL:</strong> {res.url}</p>
+            <p><strong>Title:</strong> {res.title}</p>
+            {res.store && (
               <p>
                 <strong>Store:</strong>{' '}
-                {Array.isArray(result.store)
-                  ? result.store.join(', ')
-                  : result.store}
+                {Array.isArray(res.store)
+                  ? res.store.join(', ')
+                  : res.store}
               </p>
             )}
-            <p>
-              <strong>Total Results:</strong> {result.total_prices}
-            </p>
-            <p>
-              <strong>Time Taken:</strong> {result.time_taken}
-            </p>
-            <div>
-              <strong>Results:</strong>
-              {result.prices.map((priceHtml, i) => (
-                <div key={i} className="price-item">
-                  {parse(he.decode(priceHtml))}
+            <p><strong>Total Results:</strong> {res.total_prices}</p>
+            <p><strong>Time Taken:</strong> {res.time_taken}</p>
+            <div className="price-list">
+              <strong>Results:</strong><br /><br />
+              {res.prices.map((html, idx) => (
+                <div
+                  key={idx}
+                  className="price-item"
+                >
+                  {parse(he.decode(html))}
                 </div>
               ))}
             </div>
@@ -83,23 +60,25 @@ function ScrapeResultsStatus({ taskIds, setStatus, status }) {
   };
 
   return (
-    <div>
+    <div className="scrape-results-status">
       {status ? (
         status.all_ready ? (
-          <div>
-            <h2>Scrape Final Results:</h2>
+          <>
+            <h2>Scrape Final Results</h2>
             {renderResults()}
-          </div>
+          </>
         ) : (
-          <div>
-            <h2>Scrape Task Updating:</h2>
-            <pre>{JSON.stringify(status, null, 2)}</pre>
-          </div>
+          <>
+            <h2>Scrape Task Updating</h2>
+            <pre className="status-json">
+              {JSON.stringify(status, null, 2)}
+            </pre>
+          </>
         )
       ) : (
-        <div>Waiting for scrape updates...</div>
+        <div>Waiting for scrape updates…</div>
       )}
-    </div>
+    </div>  
   );
 }
 

@@ -9,21 +9,28 @@ from ..Helpers.browser_helper import launch_browser
 from ..Helpers.random_context import get_random_context_params
 from celery.utils.log import get_task_logger
 from celery.exceptions import SoftTimeLimitExceeded
+from billiard.exceptions import TimeLimitExceeded
 
 logger = get_task_logger(__name__)
 @celery.task(
     name="tasks.scrape_oreilly",
     queue="oreilly",
-    soft_time_limit=90,
-    time_limit=120,
+    soft_time_limit=180,
+    time_limit=240,
     acks_late=True,
     bind=True,
-    autoretry_for=(SoftTimeLimitExceeded,),
+    autoretry_for=(SoftTimeLimitExceeded, TimeLimitExceeded, Exception),
     retry_backoff=True,
-    retry_kwargs={'max_retries': 3, 'countdown': 3},
+    retry_kwargs={'max_retries': 5},
 )
 def scrape_oreilly(self, search, url):
-    return asyncio.run(async_scrape_oreilly(search, url))
+    loop = asyncio.new_event_loop()
+    try:
+        result = loop.run_until_complete(async_scrape_oreilly(search, url))
+    finally:
+        loop.run_until_complete(loop.shutdown_asyncgens())
+        loop.close()
+    return result
 
 def extract_store_id(url):
     match = re.search(r'autoparts-(\d+)\.html', url)
@@ -36,10 +43,21 @@ async def async_scrape_oreilly(search, url):
     await asyncio.sleep(random.uniform(1, 3))
     logger.info(f"Starting scrape_oreilly for search term: {search} on {url}")
     oreilly_results = []
-    browser = None
+
+    p = browser = context = None
     try:
         user_agent, viewport = get_random_context_params()
-        p, browser, context = await launch_browser(user_agent=user_agent, viewport=viewport)
+        try:
+            logger.info("Launching Playwright for Oreilly...")
+            p, browser, context = await asyncio.wait_for(
+                launch_browser(user_agent=user_agent, viewport=viewport),
+                timeout=30
+            )
+            logger.info("Playwright launched for Oreilly")
+        except asyncio.TimeoutError:
+            logger.warning("Oreilly Browser launch timed out, retrying...")
+            raise
+                
         page = await context.new_page()
             
         scrape_start = time.time()
@@ -47,22 +65,21 @@ async def async_scrape_oreilly(search, url):
         logger.info(f"Store ID ==> {store_id}")
         
         await safe_goto(page, url)
-        await asyncio.sleep(5)
+        await asyncio.sleep(2)
         ele = await page.wait_for_selector(f'a.js-shop-now[data-store-id="{store_id}"]', timeout=60000)
         await ele.click(timeout=60000)
-        await asyncio.sleep(5)
+        await asyncio.sleep(2)
         await safe_goto(page, f"https://www.oreillyauto.com/search?q={search}")
-        await asyncio.sleep(5)
-        selector = (
-            'span.header-icon-button-text--desktop:has(span.header-icon-button-text__top small:has-text("Selected Store")) '
-            'span.header-icon-button-text__bottom strong span'
-        )
-        await page.wait_for_selector(selector, timeout=60000)
-        location_element = await page.query_selector(selector)
-        location_text = (await location_element.inner_text()).strip()
-        logger.info(f"LOCATION TEXT ===> {location_text} <===")
+        await asyncio.sleep(2)
 
-        
+        selector = (
+            "small.header-navigation-label__label__subtitle:has-text('Selected Store')"
+            " + span.header-navigation-label__label__text"
+        )
+        await page.wait_for_selector(selector, timeout=60_000)
+        location_text = (await page.inner_text(selector)).strip()
+        logger.info(f"LOCATION ===> {location_text} <===")
+
         data = {"url": url, "title": await page.title(), "store": location_text}
         print(data)
 
@@ -85,13 +102,17 @@ async def async_scrape_oreilly(search, url):
         data["time_taken"] = f"{time_taken:.2f}"
         oreilly_results.append(data)
         logger.info(f"Completed scrape_oreilly for search term: {search} in {time_taken:.2f} sec on {url}")
-    except Exception as e:
-        logger.error(f"Error in scrape_oreilly for search '{search}': {e}")
+
+    except Exception:
+        logger.exception(f"Error in oreilly_scraper for {search!r} @ {url!r}")
         raise
     finally:
+        if context:
+            await context.close()
         if browser:
             await browser.close()
         if p:
             await p.stop()
+
 
     return oreilly_results

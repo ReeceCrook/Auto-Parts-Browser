@@ -8,6 +8,7 @@ from ..Helpers.browser_helper import launch_browser
 from ..Helpers.random_context import get_random_context_params
 from celery.utils.log import get_task_logger
 from celery.exceptions import SoftTimeLimitExceeded
+from billiard.exceptions import TimeLimitExceeded
 
 logger = get_task_logger(__name__)
 @celery.task(
@@ -17,20 +18,39 @@ logger = get_task_logger(__name__)
     time_limit=120,
     acks_late=True,
     bind=True,
-    autoretry_for=(SoftTimeLimitExceeded,),
+    autoretry_for=(SoftTimeLimitExceeded, TimeLimitExceeded, Exception),
     retry_backoff=True,
-    retry_kwargs={'max_retries': 3, 'countdown': 3},
+    retry_kwargs={'max_retries': 5},
 )
-def scrape_advance(self, search, url):
-    return asyncio.run(async_scrape_advance(search, url))
+
+def scrape_advance(self, search, url):  
+    loop = asyncio.new_event_loop()
+    try:
+        result= loop.run_until_complete(async_scrape_advance(search, url))
+    finally:
+        loop.run_until_complete(loop.shutdown_asyncgens())
+        loop.close()
+    return result
 
 async def async_scrape_advance(search, url):
     await asyncio.sleep(random.uniform(1, 3))
     logger.info(f"Starting scrape_advance for search term: {search} on {url}")
     advance_results = []
-    user_agent, viewport = get_random_context_params()
-    p, browser, context = await launch_browser(user_agent=user_agent, viewport=viewport)
+
+    p = browser = context = None
     try:
+        user_agent, viewport = get_random_context_params()
+        try:
+            logger.info("Launching Playwright for Advance...")
+            p, browser, context = await asyncio.wait_for(
+                launch_browser(user_agent=user_agent, viewport=viewport),
+                timeout=30
+            )
+            logger.info("Playwright launched for Advance")
+        except asyncio.TimeoutError:
+            logger.warning("Advance Browser launch timed out, retrying...")
+            raise
+
         page = await context.new_page()
         scrape_start = time.time()
 
@@ -51,12 +71,15 @@ async def async_scrape_advance(search, url):
         data["time_taken"] = f"{time_taken:.2f}"
         advance_results.append(data)
         logger.info(f"Completed scrape_advance for search term: {search} in {time_taken:.2f} sec on {url}")
-    except Exception as e:
-        logger.error(f"Error in scrape_advance for search '{search}': {e}")
+    except Exception:
+        logger.exception(f"Error in advance_scraper for {search!r} @ {url!r}")
         raise
     finally:
+        if context:
+            await context.close()
         if browser:
             await browser.close()
         if p:
             await p.stop()
+
     return advance_results

@@ -35,8 +35,8 @@ function ScrapeStatus({ taskId, status, setStatus }) {
       {status ? (
         status.all_ready ? (
           <div>
-            <h2>Final Results:</h2>
-            <pre>{JSON.stringify(status.results, null, 2)}</pre>
+            {/* <h2>Final Results:</h2>
+            <pre>{JSON.stringify(status.results, null, 2)}</pre> */}
           </div>
         ) : (
           <div>

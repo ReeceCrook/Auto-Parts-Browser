@@ -2,7 +2,9 @@ import '../css/App.css';
 import React, { useState, useEffect } from 'react';
 
 function PlacesResults({ response, onLocationToggle, selectedLocations }) {
-  const [resultText, setResultText] = useState("")
+  const [resultText, setResultText] = useState("");
+  const [selectedDetails, setSelectedDetails] = useState([]);
+  const [viewMode, setViewMode] = useState(false);
 
   useEffect(() => {
     if (response && response.results) {
@@ -18,39 +20,81 @@ function PlacesResults({ response, onLocationToggle, selectedLocations }) {
       }
     }
   }, [response]);
-  
 
-  return (
-    <div>
-      <h2>Places Results</h2> <br />
-      <div className='places-results-wrapper'>
-        {resultText !== "" ? <div>{resultText}</div> : response ? Object.entries(response.results).map(([taskId, result]) => (
-          <div key={taskId} className='places-results-card'>
-            <div style={{ textAlign: 'right' }}>
-              <input 
-                type="checkbox" 
-                checked={selectedLocations[result.place_id] ? true : false}
-                onChange={(e) => onLocationToggle(result.place_id, result, e.target.checked)}
-              />
+  function handleApply() {
+    const details = Object.entries(selectedLocations).map(([place_id, place]) => ({
+      id:      place_id,
+      name:    place.name,
+      rating:  place.rating,
+      openNow: place.opening_hours?.open_now,
+      website: place.website,
+      location: place.vicinity
+    }));
+
+    setSelectedDetails(details);
+    setViewMode(true);
+  }
+
+
+  const MainUI = () => (
+    <>
+      <div>
+        <button onClick={handleApply}>SELECTED DETAILS TEST</button>
+        <h2>Places Results</h2> <br />
+        <div className='places-results-wrapper'>
+          {resultText !== "" ? <div>{resultText}</div> : response ? Object.entries(response.results).map(([taskId, result]) => (
+            <div key={taskId} className='places-results-card'>
+              <div style={{ textAlign: 'right' }}>
+                <input 
+                  type="checkbox" 
+                  checked={!!selectedLocations[result.place_id]}
+                  onChange={(e) => onLocationToggle(result.place_id, result, e.target.checked)}
+                />
+              </div>
+              <h2>{result.name}</h2>
+              <h3>Task ID: {taskId}</h3>
+              <h4>Address: {result.vicinity}</h4>
+              <div>
+                {result.opening_hours && result.opening_hours.open_now !== undefined
+                  ? `Open: ${result.opening_hours.open_now}`
+                  : "No open result"} 
+                <br />
+                Website: {result.website || "N/A"}
+              </div>
+              <pre>{JSON.stringify(result, null, 2)}</pre>
             </div>
-            <h2>{result.name}</h2>
-            <h3>Task ID: {taskId}</h3>
-            <h4>Address: {result.vicinity}</h4>
-            <div>
-              {result.opening_hours && result.opening_hours.open_now !== undefined
-                ? `Open: ${result.opening_hours.open_now}`
-                : "No open result"} 
-              <br />
-              Website: {result.website || "N/A"}
-            </div>
-            <pre>{JSON.stringify(result, null, 2)}</pre>
-          </div>
-        ))
-        : "No results"}
+          ))
+          : "No results"}
+        </div>
       </div>
-      
+    </>
+  )
+
+
+  const DetailsUI = () => (
+    <>
+    <div className='detailsUIWrapper'>
+      <div className='detailsUIInnerWrapper'>
+        <button className='detailsUIEditButton' onClick={() => setViewMode(false)}>Edit</button>
+        <div className="card-grid">
+          {selectedDetails.map(place => (
+            <div key={place.id} className="card detail-card">
+              <h2>{place.name}</h2>
+              <h3>{place.location}</h3>
+              <h4>{place.openNow}</h4>
+              <h4>{place.rating}⭐</h4>
+              <a href={place.website} target='_blank'  without rel="noreferrer">Official Website</a>
+            </div>
+          ))}
+        </div>
+      </div>
     </div>
-  );
+
+    </>
+  ) 
+  
+  
+  return viewMode ? <DetailsUI /> : <MainUI />;
 }
 
 export default PlacesResults;

@@ -77,3 +77,56 @@
   max-height: 150px;
   overflow: auto;
 }
+
+.detailsUIWrapper {
+  width: 100%;
+}
+
+
+.card-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+  gap: 1rem;
+  padding: 1rem;
+  max-width: 85.5%;
+  margin: auto;
+  margin-bottom: 3%;
+  outline: solid;
+  outline-color: #0052cc;
+}
+
+.card {
+  background: #fff;
+  border-radius: 8px;
+  padding: 1rem;
+  display: flex;
+  flex-direction: column;
+  transition: transform 0.2s ease;
+}
+
+.card:hover {
+  transform: translateY(-4px);
+}
+
+.detail-card {
+  color: black;
+  padding: 5%;
+}
+
+
+.detailsUIEditButton {
+  margin: auto;
+  margin-top: 1%;
+  padding: 0.6%;
+  background-color: #0052cc;
+  border: none;
+  color: white;
+  font-size: 100%;
+  cursor: pointer;
+  transition: background-color 0.2s ease;
+  width: 86%;
+}
+
+.detailsUIEditButton:hover {
+  background-color: #0d34b4;
+}

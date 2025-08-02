@@ -1,0 +1,170 @@
+.mainUIWrapper {
+    width: 100%;
+}
+
+.mainUIInnerWrapper {
+    width: 65%;
+    margin: auto;
+    display: flex;
+    flex-direction: column;
+}
+
+.mainUIApplyButton,
+.placesResultsWrapper {
+    width: 100%;
+}
+
+.mainUIApplyButton {
+    display: block;
+    padding: 0.6%;
+    background-color: #009218;
+    border: none;
+    color: white;
+    font-size: 115%;
+    cursor: pointer;
+    transition: background-color 0.2s ease;
+}
+
+.mainUIInnerWrapper:has(.mainUIApplyButton:hover) .mainUIApplyButton {
+    background-color: #009218a2;
+}
+
+.mainUIApplyButton:hover ~ .placesResultsWrapper {
+    border-color: #009218a2;
+}
+
+.mainUIApplyButton.bottom {
+    order: 2;
+}
+
+.placesResultsWrapper {
+    order: 1;
+}
+
+.placesResultsWrapper {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+    gap: 20px;
+    padding: 20px;
+    border: 0.33rem solid #009218;
+    transition: border-color 0.2s ease;
+}
+
+.placesResultsCard {
+    position: relative;
+    background: white;
+    color: black;
+    border: 1px solid white;
+    border-radius: 6px;
+    padding: 16px;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+}
+
+.placesResultsCard input[type="checkbox"] {
+    position: absolute;
+    top: 12px;
+    right: 12px;
+    width: 18px;
+    height: 18px;
+}
+
+.placesResultsCard h2 {
+    margin: 0 0 8px;
+    font-size: 1.2rem;
+}
+.placesResultsCard h3 {
+    margin: 4px 0;
+    font-size: 0.9rem;
+    color: grey;
+}
+.placesResultsCard h4 {
+    margin: 8px 0;
+    font-size: 0.85rem;
+    color: grey;
+}
+
+.placesResultsCard > div {
+    margin-bottom: 12px;
+    font-size: 0.85rem;
+    color: grey;
+}
+
+.placesResultsCard pre {
+    flex: 1;
+    margin: 0;
+    padding: 10px;
+    background: white;
+    border-radius: 4px;
+    font-size: 0.75rem;
+    line-height: 1.2;
+    white-space: pre-wrap;
+    word-break: break-word;
+    max-height: 150px;
+    overflow: auto;
+}
+
+/**//**//**//**//**//**//**//**//**//**/
+
+.detailsUIWrapper {
+    width: 100%;
+}
+
+.detailsUIInnerWrapper {
+    width: 85%;
+    margin: auto;
+    margin-bottom: 3%;
+}
+
+.detailsUIEditButton,
+.cardGrid {
+    width: 100%;
+}
+
+.cardGrid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+    gap: 1rem;
+    padding: 0.6%;
+    border: 0.33rem solid #0052cc;
+    transition: border-color 0.2s ease;
+}
+
+.card {
+    background: #fff;
+    border-radius: 8px;
+    padding: 1rem;
+    display: flex;
+    flex-direction: column;
+    transition: transform 0.2s ease;
+}
+
+.card:hover {
+    transform: translateY(-4px);
+}
+
+.detailCard {
+    color: black;
+    padding: 5%;
+}
+
+.detailsUIEditButton {
+    display: block;
+    margin-top: 1%;
+    padding: 0.6%;
+    background-color: #0052cc;
+    border: none;
+    color: white;
+    font-size: 115%;
+    cursor: pointer;
+    transition: background-color 0.2s ease;
+}
+
+.detailsUIEditButton:hover {
+    background-color: #0d34b4;
+}
+
+.detailsUIEditButton:hover + .cardGrid {
+    border-color: #0d34b4;
+}

@@ -14,7 +14,7 @@ function App() {
   const [selectedLocations, setSelectedLocations] = useState({});
   const [error, setError] = useState(null);
   const [SSEStatus, setSSEStatus] = useState(null);
-  console.log(selectedLocations, "SELECTED")
+  const [isDetailsViewEnabled, setIsDetailsViewEnabled] = useState(false)
 
   const handleLocationToggle = (placeId, result, checked) => {
     setSelectedLocations(prev => {
@@ -82,9 +82,11 @@ function App() {
           response={SSEStatus} 
           onLocationToggle={handleLocationToggle}
           selectedLocations={selectedLocations}
+          isDetailsViewEnabled={isDetailsViewEnabled}
+          setIsDetailsViewEnabled={setIsDetailsViewEnabled}
         />
       </div>
-      <div className="search-wrapper">
+      {isDetailsViewEnabled ? <div className="search-wrapper">
         <form>
           <label htmlFor="searchInput">Search:</label>
           <input
@@ -98,7 +100,7 @@ function App() {
           <button type='button' onClick={handleScrapeSelected}>Scrape Selected Locations</button>
         </form>
         {error && <p className="error">Error: {error}</p>}
-      </div>
+      </div> : false}
       <div style={{ marginTop: '20px' }}>
         {scrapeResponse && (
           <ScrapeResultsStatus

@@ -94,8 +94,7 @@ function PlacesResults({ response, onLocationToggle, selectedLocations, isDetail
     </>
   ) 
   
-  
-  return isDetailsViewEnabled ? <DetailsUI /> : <MainUI />;
+  return !response ? "^ Please do a place search ^" : isDetailsViewEnabled ? <DetailsUI /> : <MainUI />;
 }
-
+  
 export default PlacesResults;

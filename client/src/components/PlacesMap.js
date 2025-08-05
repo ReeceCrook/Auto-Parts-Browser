@@ -1,14 +1,13 @@
 /* global google */
-import React, { useState, useEffect } from "react";
+import { useState, useEffect } from "react";
 import {
-  APIProvider,
-  Map,
+  Map, 
   AdvancedMarker,
   MapControl,
   ControlPosition,
   useMap
 } from "@vis.gl/react-google-maps";
-import AutoCompleteCustom from "./AutoCompleteCustom";
+import PlaceSearch from "./PlaceSearch";
 
 function MapController({ selectedPlace }) {
   const map = useMap();
@@ -80,13 +79,14 @@ function PlacesMap({ selectedPlace, setSelectedPlace, placesResponse, setPlacesR
   
 
   return (
-    <APIProvider apiKey="AIzaSyCv3Wf69VArh-8eQlJGzOGRlFpiZz4dYOU" libraries={['places']}>
+    <div>
       <Map
         mapId="ad030c5dd452d96c"
         defaultCenter={{ lat: 22.5, lng: 0 }}
         defaultZoom={3}
         disableDefaultUI
         gestureHandling="greedy"
+        style={{ width: '100%', height: '400px' }}
       >
         <MapController selectedPlace={selectedPlace} />
 
@@ -99,7 +99,7 @@ function PlacesMap({ selectedPlace, setSelectedPlace, placesResponse, setPlacesR
 
       <MapControl position={ControlPosition.TOP_CENTER}>
         <div style={{ alignItems: "center"}}>
-          <AutoCompleteCustom onPlaceSelect={handlePlaceSelect} />
+          <PlaceSearch onPlaceSelect={handlePlaceSelect} />
           <input
             type="number"
             placeholder="Miles"
@@ -110,7 +110,7 @@ function PlacesMap({ selectedPlace, setSelectedPlace, placesResponse, setPlacesR
           <button onClick={handleLocateMe}>My Location</button>
         </div>
       </MapControl>
-    </APIProvider>
+    </div>
   );
 }
 

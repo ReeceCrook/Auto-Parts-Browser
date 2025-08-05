@@ -84,7 +84,7 @@ function PlacesResults({ response, onLocationToggle, selectedLocations, isDetail
               <h3>{place.location}</h3>
               <h4>{place.openNow}</h4>
               <h4>{place.rating}⭐</h4>
-              <a href={place.website} target='_blank'  without rel="noreferrer">Official Website</a>
+              <a href={place.website} target='_blank' rel="noreferrer">Official Website</a>
             </div>
           ))}
         </div>

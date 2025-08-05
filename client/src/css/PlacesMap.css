@@ -1,0 +1,24 @@
+.milesInput {
+ background-color: black;
+ color: white;
+ border: none;
+ margin: 1px 1px 0px 0px;
+ padding: 0.5%;
+ width: 30%;
+}
+
+.fetchPlacesButton {
+ background-color: black;
+ color: white;
+ border: none;
+ margin: 1px 1px 0px 0px;
+ padding: 0.5%;
+}
+
+.locateMeButton {
+ background-color: black;
+ color: white;
+ border: none;
+ margin: 1px 1px 0px 0px;
+ padding: 0.5%;
+}

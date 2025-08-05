@@ -1,5 +1,6 @@
 /* global google */
 import { useState, useEffect } from "react";
+import "../css/PlacesMap.css"
 import {
   Map, 
   AdvancedMarker,
@@ -12,10 +13,10 @@ import PlaceSearch from "./PlaceSearch";
 function MapController({ selectedPlace }) {
   const map = useMap();
   useEffect(() => {
-    const loc = selectedPlace?.geometry?.location;
+    const loc = selectedPlace?.location;
     if (!map || !loc) return;
-    if (selectedPlace.geometry.viewport) {
-      const { north, south, east, west } = selectedPlace.geometry.viewport;
+    if (selectedPlace.viewport) {
+      const { north, south, east, west } = selectedPlace.viewport;
       const bounds = new google.maps.LatLngBounds(
         { lat: south, lng: west },
         { lat: north, lng: east }
@@ -37,7 +38,8 @@ function PlacesMap({ selectedPlace, setSelectedPlace, placesResponse, setPlacesR
     navigator.geolocation.getCurrentPosition(({ coords }) => {
       const loc = { lat: coords.latitude, lng: coords.longitude };
       setSelectedPlace({
-        geometry: { location: loc, viewport: null },
+        location: loc,
+        viewport: null,
         name: "My Location",
         formatted_address: null,
         radius: parseFloat(radius || 0) * 1609.34
@@ -47,20 +49,23 @@ function PlacesMap({ selectedPlace, setSelectedPlace, placesResponse, setPlacesR
 
   const handlePlaceSelect = (place) => {
     const loc = {
-      lat: place.geometry.location.lat(),
-      lng: place.geometry.location.lng()
+      lat: place.location.lat(),
+      lng: place.location.lng()
     };
-    const viewport = place.geometry.viewport?.toJSON();
+    console.log(place.location, "<=== place.location || loc ===>", loc)
+    const viewport = place.viewport?.toJSON();
+    console.log("Viewport ==>", viewport)
     setSelectedPlace({
-      geometry: { location: loc, viewport },
-      name: place.name,
-      formatted_address: place.formatted_address,
+      location: loc,
+      viewport: viewport,
+      name: place.displayName,
+      formatted_address: place.formattedAddress,
       radius: parseFloat(radius || 0) * 1609.34
     });
   };
 
   const handleFetchPlaces = () => {
-    const loc = selectedPlace.geometry.location;
+    const loc = selectedPlace.location;
     const metersRadius = Math.round(parseFloat(radius) * 1609.34);
     if (!loc || !metersRadius) return;
   
@@ -82,7 +87,7 @@ function PlacesMap({ selectedPlace, setSelectedPlace, placesResponse, setPlacesR
     <div>
       <Map
         mapId="ad030c5dd452d96c"
-        defaultCenter={{ lat: 22.5, lng: 0 }}
+        defaultCenter={{ lat: 44.967243, lng: -103.771556 }}
         defaultZoom={3}
         disableDefaultUI
         gestureHandling="greedy"
@@ -90,9 +95,9 @@ function PlacesMap({ selectedPlace, setSelectedPlace, placesResponse, setPlacesR
       >
         <MapController selectedPlace={selectedPlace} />
 
-        {selectedPlace?.geometry?.location && (
+        {selectedPlace?.location && (
           <AdvancedMarker
-            position={selectedPlace.geometry.location}
+            position={selectedPlace.location}
           />
         )}
       </Map>
@@ -102,12 +107,14 @@ function PlacesMap({ selectedPlace, setSelectedPlace, placesResponse, setPlacesR
           <PlaceSearch onPlaceSelect={handlePlaceSelect} />
           <input
             type="number"
+            min="1"
+            className="milesInput"
             placeholder="Miles"
             value={radius}
             onChange={e => setRadius(e.target.value)}
           />
-          <button onClick={handleFetchPlaces} disabled={!selectedPlace?.geometry?.location || !radius}>Search Nearby</button>
-          <button onClick={handleLocateMe}>My Location</button>
+          <button onClick={handleFetchPlaces} className="fetchPlacesButton" disabled={!selectedPlace?.location || !radius}>Search Nearby</button>
+          <button onClick={handleLocateMe} className="locateMeButton">My Location</button>
         </div>
       </MapControl>
     </div>

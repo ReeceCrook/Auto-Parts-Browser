@@ -3,7 +3,7 @@ import { useMapsLibrary } from '@vis.gl/react-google-maps';
 
 function PlaceSearch({ onPlaceSelect }) {
   const containerRef = useRef(null);
-  const placesLib     = useMapsLibrary('places');
+  const placesLib = useMapsLibrary('places');
 
   useEffect(() => {
     if (!placesLib) return;
@@ -15,14 +15,17 @@ function PlaceSearch({ onPlaceSelect }) {
     const container = containerRef.current;
     container.appendChild(widget);
 
-    widget.addEventListener('gmp-select', async (e) => {
-      const prediction = e.detail.placePrediction;
-      const place = prediction.toPlace();
-      await place.fetchFields({
-        fields: ['geometry', 'name', 'formatted_address']
-      });
-      onPlaceSelect(place);
-    });
+    widget.addEventListener(
+      'gmp-select',
+      async ({ placePrediction }) => {
+        const place = placePrediction.toPlace();
+        await place.fetchFields({
+          fields: ['displayName', 'formattedAddress', 'location', 'viewport']
+        });
+        onPlaceSelect(place);
+      }
+    );
+
 
     return () => {
       widget.removeEventListener('gmp-select', () => {});

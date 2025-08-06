@@ -113,7 +113,7 @@ function PlacesMap({ selectedPlace, setSelectedPlace, placesResponse, setPlacesR
             value={radius}
             onChange={e => setRadius(e.target.value)}
           />
-          <button onClick={handleFetchPlaces} className="fetchPlacesButton" disabled={!selectedPlace?.location || !radius}>Search Nearby</button>
+          <button onClick={handleFetchPlaces} className={!selectedPlace?.location || !radius ? "fetchPlacesButtonDisabled" : "fetchPlacesButtonEnabeled"} disabled={!selectedPlace?.location || !radius}>Search Nearby</button>
           <button onClick={handleLocateMe} className="locateMeButton">My Location</button>
         </div>
       </MapControl>

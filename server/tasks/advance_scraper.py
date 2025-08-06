@@ -65,11 +65,32 @@ async def async_scrape_advance(search, url):
         await safe_goto(page, f"https://shop.advanceautoparts.com/web/SearchResults?searchTerm={search}")
         await page.wait_for_selector(".css-rps5gr", timeout=60000)
         elements = await page.query_selector_all(".css-13pqr4x")
-        data["prices"] = [await element.evaluate("el => el.outerHTML") for element in elements]
+        listings = []
+        for ele in elements:
+            img_ele = await ele.query_selector("img")
+            name_ele = await ele.query_selector("p[title]")
+            price_ele = await ele.query_selector("[aria-label] .css-iib095")
+            part_num_ele = await ele.query_selector(".css-scvhiv")
+            availability_ele = await ele.query_selector(".css-1tq25me") or await ele.query_selector(".css-ljuqvw")
+            link_ele = await ele.query_selector(".css-1my37vd")
+            if not price_ele:
+                price_ele = await ele.query_selector(".css-iib095")
+            
+            image = await img_ele.get_attribute("src") if img_ele else None
+            name = (await name_ele.text_content()).strip() if name_ele else None
+            price = (await price_ele.get_attribute("aria-label") or (await price_ele.text_content()).strip())
+            part_number = await part_num_ele.inner_text() if part_num_ele else None
+            availability = await availability_ele.inner_text() if availability_ele else None
+            link = await link_ele.get_attribute("href") if link_ele else None
+
+            listings.append({"image": image, "name": name, "price": price, "part_number": part_number, "availability": availability, "link": link})
+
+        data["prices"] = listings
         data["total_prices"] = len(data["prices"])
         time_taken = time.time() - scrape_start
         data["time_taken"] = f"{time_taken:.2f}"
         advance_results.append(data)
+        print("DATA =====>", data, "<=========== DATA")
         logger.info(f"Completed scrape_advance for search term: {search} in {time_taken:.2f} sec on {url}")
     except Exception:
         logger.exception(f"Error in advance_scraper for {search!r} @ {url!r}")

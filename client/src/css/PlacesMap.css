@@ -1,24 +1,46 @@
 .milesInput {
- background-color: black;
- color: white;
- border: none;
- margin: 1px 1px 0px 0px;
- padding: 0.5%;
- width: 30%;
+    background-color: black;
+    color: white;
+    border: none;
+    margin: 1px 1px;
+    padding: 1%;
+    width: 30%;
+    font-size: medium;
 }
 
-.fetchPlacesButton {
- background-color: black;
- color: white;
- border: none;
- margin: 1px 1px 0px 0px;
- padding: 0.5%;
+.fetchPlacesButtonEnabeled {
+    background-color: black;
+    color: white;
+    border: none;
+    margin: 1px 1px;
+    padding: 1%;
+    font-size: medium;
+}
+
+.fetchPlacesButtonEnabeled:hover {
+    background-color: rgb(78, 77, 77);
+    cursor: pointer;
+}
+
+.fetchPlacesButtonDisabled {
+    background-color: transparent grey;
+    font-size: medium;
+    color: black;
+    margin: 1px 1px;
+    padding: 0.5%;
 }
 
 .locateMeButton {
- background-color: black;
- color: white;
- border: none;
- margin: 1px 1px 0px 0px;
- padding: 0.5%;
+    background-color: black;
+    color: white;
+    border-style: hidden;
+    border-radius: 5%;
+    margin: 1px 1px;
+    padding: 1%;
+    font-size: medium;
+}
+
+.locateMeButton:hover {
+    background-color: rgb(78, 77, 77);
+    cursor: pointer;
 }

@@ -1,7 +1,5 @@
 // src/components/ScrapeResultsStatus.js
 import React, { useEffect } from 'react';
-import parse from 'html-react-parser';
-import he from 'he';
 import '../css/ScrapeResultsStatus.css';
 
 function ScrapeResultsStatus({ taskIds, setStatus, status }) {
@@ -44,12 +42,15 @@ function ScrapeResultsStatus({ taskIds, setStatus, status }) {
             <p><strong>Time Taken:</strong> {res.time_taken}</p>
             <div className="price-list">
               <strong>Results:</strong><br /><br />
-              {res.prices.map((html, idx) => (
+              {res.prices.map((listing, idx) => (
                 <div
                   key={idx}
-                  className="price-item"
+                  className="listing"
                 >
-                  {parse(he.decode(html))}
+                  <a href={`https://shop.advanceautoparts.com${listing.link}`} target='_blank' rel="noreferrer">
+                    Name: {listing.name} <br /> price: ${listing.price} <br /> Part#: {listing.part_number} <br /> <br /> Availability: {listing.availability} <br /> <br />
+                    <img src={listing.image} alt='listingImage' />
+                  </a>
                 </div>
               ))}
             </div>

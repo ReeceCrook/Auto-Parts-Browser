@@ -97,7 +97,26 @@ async def async_scrape_oreilly(search, url):
             prev_count = count
             
         time_taken = time.time() - scrape_start
-        data["prices"] = [await element.evaluate("el => el.outerHTML") for element in elements]
+        
+        listings = []
+        for ele in elements:
+            img_ele = await ele.query_selector("img")
+            name_ele = await ele.query_selector(".product__name")
+            price_ele = await ele.query_selector(".product-pricing__price")
+            part_num_ele = await ele.query_selector(".part-info")
+            availability_ele = await ele.query_selector(".pickup-eligibility-status")
+            link_ele = await ele.query_selector(".product__link")
+
+            image = await img_ele.get_attribute("src") if img_ele else None
+            name = (await name_ele.text_content()).strip() if name_ele else None
+            price = await price_ele.inner_text() if price_ele else None
+            part_number = await part_num_ele.inner_text() if part_num_ele else None
+            availability = await availability_ele.inner_text() if availability_ele else None
+            link = await link_ele.get_attribute("href") if link_ele else None
+
+            listings.append({"image": image, "name": name, "price": price, "part_number": part_number, "availability": availability, "link": link})
+
+        data["prices"] = listings
         data["total_prices"] = len(data["prices"])
         data["time_taken"] = f"{time_taken:.2f}"
         oreilly_results.append(data)

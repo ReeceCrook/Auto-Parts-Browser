@@ -1,5 +1,4 @@
-// src/components/ScrapeResultsStatus.js
-import React, { useEffect } from 'react';
+import { useEffect } from 'react';
 import '../css/ScrapeResultsStatus.css';
 
 function ScrapeResultsStatus({ taskIds, setStatus, status }) {
@@ -24,10 +23,10 @@ function ScrapeResultsStatus({ taskIds, setStatus, status }) {
   const renderResults = () => {
     if (!status.results) return null;
     return Object.entries(status.results).map(([taskId, results]) => (
-      <div key={taskId} className="task-group">
+      <div key={taskId} className="taskGroup">
         <h3>Task: {taskId}</h3>
         {results.map((res, i) => (
-          <div key={i} className="result-card">
+          <div key={i} className="resultCard">
             <p><strong>URL:</strong> {res.url}</p>
             <p><strong>Title:</strong> {res.title}</p>
             {res.store && (
@@ -38,22 +37,45 @@ function ScrapeResultsStatus({ taskIds, setStatus, status }) {
                   : res.store}
               </p>
             )}
-            <p><strong>Total Results:</strong> {res.total_prices}</p>
-            <p><strong>Time Taken:</strong> {res.time_taken}</p>
-            <div className="price-list">
-              <strong>Results:</strong><br /><br />
-              {res.prices.map((listing, idx) => (
-                <div
-                  key={idx}
-                  className="listing"
-                >
-                  <a href={`https://shop.advanceautoparts.com${listing.link}`} target='_blank' rel="noreferrer">
-                    Name: {listing.name} <br /> price: ${listing.price} <br /> Part#: {listing.part_number} <br /> <br /> Availability: {listing.availability} <br /> <br />
-                    <img src={listing.image} alt='listingImage' />
-                  </a>
+            {res.title.includes("Advance") ? (
+              <div> 
+                <p><strong>Total Results:</strong> {res.total_prices}</p>
+                <p><strong>Time Taken:</strong> {res.time_taken}</p>
+                <div className="listings">
+                  <strong>Results:</strong><br /><br />
+                  {res.prices.map((listing, idx) => (
+                    <div
+                      key={idx}
+                      className="listing"
+                    >
+                      <a href={`https://shop.advanceautoparts.com${listing.link}`} target='_blank' rel="noreferrer">
+                        Name: {listing.name} <br /> Price: ${listing.price} <br /> Part#: {listing.part_number} <br /> <br /> Availability: {listing.availability} <br /> <br />
+                        <img src={listing.image} alt='listingImage' />
+                      </a>
+                    </div>
+                  ))}
                 </div>
-              ))}
-            </div>
+              </div>
+            ) : (
+              <div> 
+                <p><strong>Total Results:</strong> {res.total_prices}</p>
+                <p><strong>Time Taken:</strong> {res.time_taken}</p>
+                <div className="listings">
+                  <strong>Results:</strong><br /><br />
+                  {res.prices.map((listing, idx) => (
+                    <div
+                      key={idx}
+                      className="listing"
+                    >
+                      <a href={`https://www.oreillyauto.com${listing.link}`} target='_blank' rel="noreferrer">
+                        Name: {listing.name} <br /> Price: {listing.price} <br /> {listing.part_number} <br /> <br /> Availability: {listing.availability} <br /> <br />
+                        <img src={listing.image} alt='listingImage' />
+                      </a>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
           </div>
         ))}
       </div>
@@ -61,7 +83,7 @@ function ScrapeResultsStatus({ taskIds, setStatus, status }) {
   };
 
   return (
-    <div className="scrape-results-status">
+    <div className="scrapeResultsStatus">
       {status ? (
         status.all_ready ? (
           <>
@@ -71,7 +93,7 @@ function ScrapeResultsStatus({ taskIds, setStatus, status }) {
         ) : (
           <>
             <h2>Scrape Task Updating</h2>
-            <pre className="status-json">
+            <pre className="statusJson">
               {JSON.stringify(status, null, 2)}
             </pre>
           </>

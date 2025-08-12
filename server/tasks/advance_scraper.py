@@ -33,7 +33,6 @@ def scrape_advance(self, search, url):
     return result
 
 async def async_scrape_advance(search, url):
-    await asyncio.sleep(random.uniform(1, 3))
     logger.info(f"Starting scrape_advance for search term: {search} on {url}")
     advance_results = []
 

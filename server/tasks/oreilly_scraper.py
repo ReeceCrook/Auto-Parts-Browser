@@ -40,7 +40,6 @@ def extract_store_id(url):
     return None
 
 async def async_scrape_oreilly(search, url):
-    await asyncio.sleep(random.uniform(1, 3))
     logger.info(f"Starting scrape_oreilly for search term: {search} on {url}")
     oreilly_results = []
 
@@ -65,19 +64,18 @@ async def async_scrape_oreilly(search, url):
         logger.info(f"Store ID ==> {store_id}")
         
         await safe_goto(page, url)
-        await asyncio.sleep(2)
         ele = await page.wait_for_selector(f'a.js-shop-now[data-store-id="{store_id}"]', timeout=60000)
         await ele.click(timeout=60000)
-        await asyncio.sleep(2)
         await safe_goto(page, f"https://www.oreillyauto.com/search?q={search}")
-        await asyncio.sleep(2)
 
-        selector = (
-            "small.header-navigation-label__label__subtitle:has-text('Selected Store')"
-            " + span.header-navigation-label__label__text"
+        await page.wait_for_selector(
+            "small.header-navigation-label__label__subtitle:has-text('Selected Store') + span.header-navigation-label__label__text",
+            state="visible", timeout=15000
         )
-        await page.wait_for_selector(selector, timeout=60_000)
-        location_text = (await page.inner_text(selector)).strip()
+        location_text = (await page.text_content(
+            "small.header-navigation-label__label__subtitle:has-text('Selected Store') + span.header-navigation-label__label__text"
+        )).strip()
+
         logger.info(f"LOCATION ===> {location_text} <===")
 
         data = {"url": url, "title": await page.title(), "store": location_text}
@@ -90,7 +88,7 @@ async def async_scrape_oreilly(search, url):
         while True:
             elements = await page.query_selector_all('article.product.product--plp.product--interchange.js-product[role="article"]')
             await page.evaluate("window.scrollTo(0, document.body.scrollHeight)")
-            await page.wait_for_timeout(500)
+            await page.wait_for_timeout(100)
             count = len(elements)
             if count == prev_count:
                 break

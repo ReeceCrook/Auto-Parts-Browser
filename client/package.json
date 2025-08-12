@@ -45,6 +45,7 @@
   },
   "devDependencies": {
     "@playwright/test": "^1.49.0",
-    "@types/node": "^22.10.1"
+    "@types/node": "^22.10.1",
+    "@babel/plugin-proposal-private-property-in-object": "*"
   }
 }

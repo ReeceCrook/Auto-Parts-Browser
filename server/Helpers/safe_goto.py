@@ -4,7 +4,7 @@ import random
 async def safe_goto(page, url, max_attempts=4, timeout=20000):
     for attempt in range(max_attempts):
         try:
-            await page.goto(url, wait_until="load", timeout=timeout)
+            await page.goto(url, wait_until="domcontentloaded", timeout=timeout)
             print(f"Successfully navigated to '{url}' after {attempt + 1} attempt(s)")
             return
         except Exception as e:

@@ -26,7 +26,7 @@ function ScrapeResultsStatus({ taskIds, setStatus, status }) {
       <div key={taskId} className="taskGroup">
         <h3>Task: {taskId}</h3>
         {results.map((res, i) => (
-          <div key={i} className="resultCard">
+          <div key={i} className={res.title.includes("O'Reilly") ? "resultCard oreilly" : "resultCard advance"}>
             <p><strong>URL:</strong> {res.url}</p>
             <p><strong>Title:</strong> {res.title}</p>
             {res.store && (
@@ -42,15 +42,18 @@ function ScrapeResultsStatus({ taskIds, setStatus, status }) {
                 <p><strong>Total Results:</strong> {res.total_prices}</p>
                 <p><strong>Time Taken:</strong> {res.time_taken}</p>
                 <div className="listings">
-                  <strong>Results:</strong><br /><br />
                   {res.prices.map((listing, idx) => (
                     <div
                       key={idx}
-                      className="listing"
+                      className="listing advance"
                     >
-                      <a href={`https://shop.advanceautoparts.com${listing.link}`} target='_blank' rel="noreferrer">
-                        Name: {listing.name} <br /> Price: ${listing.price} <br /> Part#: {listing.part_number} <br /> <br /> Availability: {listing.availability} <br /> <br />
-                        <img src={listing.image} alt='listingImage' />
+                      <a href={`https://shop.advanceautoparts.com${listing.link}`} target='_blank' rel="noreferrer" className='listingLink'>
+                        Name: {listing.name} <br />
+                        Price: ${listing.price} <br />
+                        Part#: {listing.part_number} <br /> <br /> 
+                        Availability: {listing.availability} <br /> <br />
+                        
+                        <img src={listing.image} alt="listingImage" className="listingImage" />
                       </a>
                     </div>
                   ))}
@@ -61,15 +64,14 @@ function ScrapeResultsStatus({ taskIds, setStatus, status }) {
                 <p><strong>Total Results:</strong> {res.total_prices}</p>
                 <p><strong>Time Taken:</strong> {res.time_taken}</p>
                 <div className="listings">
-                  <strong>Results:</strong><br /><br />
                   {res.prices.map((listing, idx) => (
                     <div
                       key={idx}
-                      className="listing"
+                      className="listing oreilly"
                     >
                       <a href={`https://www.oreillyauto.com${listing.link}`} target='_blank' rel="noreferrer">
                         Name: {listing.name} <br /> Price: {listing.price} <br /> {listing.part_number} <br /> <br /> Availability: {listing.availability} <br /> <br />
-                        <img src={listing.image} alt='listingImage' />
+                        <img src={listing.image} alt='listingImage' className="listingImage"  />
                       </a>
                     </div>
                   ))}
@@ -87,7 +89,6 @@ function ScrapeResultsStatus({ taskIds, setStatus, status }) {
       {status ? (
         status.all_ready ? (
           <>
-            <h2>Scrape Final Results</h2>
             {renderResults()}
           </>
         ) : (

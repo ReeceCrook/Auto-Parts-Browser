@@ -14,7 +14,12 @@
     font-size: 14px;
     line-height: 1.6;
     display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(50%, 2fr));
+    grid-template-columns: repeat(auto-fit, minmax(50%, 1fr));
+}
+
+.scrapeResultsStatus h2,
+.scrapeResultsStatus .statusJson {
+  grid-column: 1 / -1;
 }
 
 .scrapeResultsStatus h2 {
@@ -61,8 +66,8 @@
 }
   
 .scrapeResultsStatus .listings {
-    display: g  d;
-    grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+    display: grid;
+    grid-template-columns: 1fr;
     gap: 16px;
     margin-top: 16px;
 }

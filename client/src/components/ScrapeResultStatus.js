@@ -93,7 +93,7 @@ function ScrapeResultsStatus({ taskIds, setStatus, status }) {
           </>
         ) : (
           <>
-            <h2>Scrape Task Updating</h2>
+            <h2>Scrape Task Updating</h2> <br /> <br />
             <pre className="statusJson">
               {JSON.stringify(status, null, 2)}
             </pre>

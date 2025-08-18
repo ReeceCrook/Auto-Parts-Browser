@@ -1,5 +1,4 @@
-import time
-import json
+import time, os, json
 from flask import Flask, request, session, Response, jsonify, stream_with_context
 from flask_cors import CORS
 from flask_bcrypt import Bcrypt
@@ -20,12 +19,27 @@ def create_app():
     app = Flask(__name__)
     app.config.from_object(Config)
 
+    frontend = os.getenv("FRONTEND_URL")
+    CORS(
+        app,
+        resources={r"/api/*": {"origins": [frontend] if frontend else [
+            "http://localhost:5173", "http://localhost:3000"
+        ]}},
+        supports_credentials=True,                      # allow cookies / Authorization with credentials
+        SESSION_COOKIE_SAMESITE = "None",
+        SESSION_COOKIE_SECURE = True,
+        methods=["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
+        allow_headers=["Content-Type", "Authorization"],# allow your custom headers
+        expose_headers=["Content-Type", "X-Total-Count"],# if frontend reads custom response headers
+        max_age=86400                                   # cache preflight 24h
+    )
+
+
     db.init_app(app)
     migrate.init_app(app, db)
 
     bcrypt.init_app(app)
     api.init_app(app)
-    CORS(app)
 
     @app.route('/scrape/status', methods=['POST'])
     def scrape_status():

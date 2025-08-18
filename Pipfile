@@ -27,4 +27,4 @@ gunicorn = "*"
 [dev-packages]
 
 [requires]
-python_version = "*"
+python_version = "3.12"

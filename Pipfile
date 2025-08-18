@@ -14,7 +14,6 @@ flask-restful = "*"
 flask-sqlalchemy = "*"
 python-dotenv = "*"
 sqlalchemy-serializer = "*"
-celery = "*"
 flower = "*"
 playwright-stealth = "*"
 pyvirtualdisplay = "*"
@@ -23,6 +22,7 @@ redis = "*"
 requests = "*"
 googlemaps = "*"
 gunicorn = "*"
+celery = {extras = ["redis"], version = "==5.4.0"}
 
 [dev-packages]
 

@@ -10,7 +10,7 @@ import {
 } from "@vis.gl/react-google-maps";
 import PlaceSearch from "./PlaceSearch";
 
-const API = process.env.API_URL;
+const API = process.env.REACT_APP_API_BASE;
 
 function MapController({ selectedPlace }) {
   const map = useMap();

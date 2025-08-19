@@ -20,19 +20,13 @@ def create_app():
     app.config.from_object(Config)
 
     frontend = os.getenv("FRONTEND_URL")
-    CORS(
-        app,
-        resources={r"/api/*": {"origins": [frontend] if frontend else [
-            "http://localhost:5173", "http://localhost:3000"
-        ]}},
-        supports_credentials=True,                      # allow cookies / Authorization with credentials
-        SESSION_COOKIE_SAMESITE = "None",
-        SESSION_COOKIE_SECURE = True,
-        methods=["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
-        allow_headers=["Content-Type", "Authorization"],# allow your custom headers
-        expose_headers=["Content-Type", "X-Total-Count"],# if frontend reads custom response headers
-        max_age=86400                                   # cache preflight 24h
-    )
+    if frontend:
+        CORS(app, resources={r"/*": {"origins": [frontend]}},
+             supports_credentials=True)
+    else:
+        CORS(app, resources={r"/*": {"origins": [
+            "http://localhost:3000"
+        ]}}, supports_credentials=True)
 
 
     db.init_app(app)

@@ -5,7 +5,7 @@ import PlacesMap from './PlacesMap';
 import PlacesResults from './PlacesResults';
 import ScrapeResultsStatus from './ScrapeResultStatus';
 
-const API = process.env.API_URL;
+const API = process.env.REACT_APP_API_BASE;
 
 
 function App() {

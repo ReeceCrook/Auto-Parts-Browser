@@ -10,6 +10,8 @@ import {
 } from "@vis.gl/react-google-maps";
 import PlaceSearch from "./PlaceSearch";
 
+const API = process.env.API_URL;
+
 function MapController({ selectedPlace }) {
   const map = useMap();
   useEffect(() => {
@@ -69,7 +71,7 @@ function PlacesMap({ selectedPlace, setSelectedPlace, placesResponse, setPlacesR
     const metersRadius = Math.round(parseFloat(radius) * 1609.34);
     if (!loc || !metersRadius) return;
   
-    fetch("/places", {
+    fetch(`${API}/places`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({

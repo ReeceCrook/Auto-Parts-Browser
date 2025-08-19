@@ -5,6 +5,9 @@ import PlacesMap from './PlacesMap';
 import PlacesResults from './PlacesResults';
 import ScrapeResultsStatus from './ScrapeResultStatus';
 
+const API = process.env.API_URL;
+
+
 function App() {
   const [searchQuery, setSearchQuery] = useState('');
   const [placesResponse, setPlacesResponse] = useState(null);
@@ -46,7 +49,7 @@ function App() {
     };
   
     try {
-      const res = await fetch('/scrape/selected', {
+      const res = await fetch(`${API}/scrape/selected`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(payload),

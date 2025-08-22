@@ -1,6 +1,6 @@
 import time, os, json
 from flask import Flask, request, session, Response, jsonify, stream_with_context
-from flask_cors import CORS
+from flask_cors import CORS, cross_origin
 from flask_bcrypt import Bcrypt
 from flask_migrate import Migrate
 from flask_sqlalchemy import SQLAlchemy
@@ -19,15 +19,16 @@ def create_app():
     app = Flask(__name__)
     app.config.from_object(Config)
 
-    frontend = os.getenv("FRONTEND_URL")
-    if frontend:
-        CORS(app, resources={r"/*": {"origins": [frontend]}},
-             supports_credentials=True)
-    else:
-        CORS(app, resources={r"/*": {"origins": [
-            "http://localhost:3000"
-        ]}}, supports_credentials=True)
-
+    frontend = os.getenv("FRONTEND_URL") or "http://localhost:3000"
+    CORS(
+        app,
+        resources={r"/*": {"origins": [frontend]}},
+        supports_credentials=False,
+        methods=["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
+        allow_headers=["Content-Type", "Authorization"],
+        expose_headers=["Content-Disposition"],
+        max_age=86400,
+    )
 
     db.init_app(app)
     migrate.init_app(app, db)
@@ -67,6 +68,7 @@ def create_app():
 
 
     @app.route('/scrape/stream', methods=['GET'])
+    @cross_origin(origins=frontend, methods=['GET'])
     def stream():
         group_id = request.args.get('group_id')
         task_ids = request.args.getlist('task_id')
@@ -86,60 +88,64 @@ def create_app():
             return flat
 
         def event_stream():
-            while True:
-                states = {}
-                results = {}
-                all_nested_ready = True
+            try:
+                while True:
+                    states = {}
+                    results = {}
+                    all_nested_ready = True
 
-                for task_id in task_ids:
-                    async_result = celery.AsyncResult(task_id)
-                    state = async_result.state
-                    states[task_id] = state
+                    for task_id in task_ids:
+                        async_result = celery.AsyncResult(task_id)
+                        state = async_result.state
+                        states[task_id] = state
 
-                    if state == "SUCCESS":
-                        res = async_result.result
+                        if state == "SUCCESS":
+                            res = async_result.result
 
-                        if isinstance(res, list) and res:
-                            if isinstance(res[0], str):
-                                nested_ready = True
-                                nested_results = {}
-                                for nested_id in res:
-                                    nested_async = celery.AsyncResult(nested_id)
-                                    if nested_async.state != "SUCCESS":
-                                        nested_ready = False
+                            if isinstance(res, list) and res:
+                                if isinstance(res[0], str):
+                                    nested_ready = True
+                                    nested_results = {}
+                                    for nested_id in res:
+                                        nested_async = celery.AsyncResult(nested_id)
+                                        if nested_async.state != "SUCCESS":
+                                            nested_ready = False
+                                        else:
+                                            nested_results[nested_id] = nested_async.result
+                                    if nested_ready:
+                                        results[task_id] = nested_results
                                     else:
-                                        nested_results[nested_id] = nested_async.result
-                                if nested_ready:
-                                    results[task_id] = nested_results
+                                        results[task_id] = res
+                                        all_nested_ready = False
+                                else:
+                                    results[task_id] = res
+                            elif isinstance(res, str):
+                                nested_async = celery.AsyncResult(res)
+                                if nested_async.state == "SUCCESS":
+                                    results[task_id] = nested_async.result
                                 else:
                                     results[task_id] = res
                                     all_nested_ready = False
                             else:
                                 results[task_id] = res
-                        elif isinstance(res, str):
-                            nested_async = celery.AsyncResult(res)
-                            if nested_async.state == "SUCCESS":
-                                results[task_id] = nested_async.result
-                            else:
-                                results[task_id] = res
-                                all_nested_ready = False
-                        else:
-                            results[task_id] = res
 
 
-                all_ready = all(state == "SUCCESS" for state in states.values()) and all_nested_ready
+                    all_ready = all(state == "SUCCESS" for state in states.values()) and all_nested_ready
 
-                if all_ready:
-                    flat_results = flatten_results(results)
-                    message = {
-                        "group_id": group_id,
-                        "states": states,
-                        "results": flat_results,
-                        "all_ready": True
-                    }
-                    yield f"data: {json.dumps(message)}\n\n"
-                    break
-                time.sleep(1)
+                    if all_ready:
+                        flat_results = flatten_results(results)
+                        message = {
+                            "group_id": group_id,
+                            "states": states,
+                            "results": flat_results,
+                            "all_ready": True
+                        }
+                        yield f"data: {json.dumps(message)}\n\n"
+                        break
+                    time.sleep(1)
+            except Exception as e:
+                err = {"error": str(e)}
+                yield f"event: error: {json.dumps(err)}\n\n"
 
         
         return Response(

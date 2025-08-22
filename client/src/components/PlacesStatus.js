@@ -1,5 +1,8 @@
 import React, { useEffect } from 'react';
 
+const API = process.env.REACT_APP_API_BASE;
+
+
 function ScrapeStatus({ taskId, status, setStatus }) {
   console.log("taskID ==>", taskId, "<== taskID")
 
@@ -8,7 +11,7 @@ function ScrapeStatus({ taskId, status, setStatus }) {
     const params = new URLSearchParams();
     params.append('task_id', taskId);
 
-    const eventSource = new EventSource(`/scrape/stream?${params.toString()}`);
+    const eventSource = new EventSource(`${API}/scrape/stream?${params.toString()}`);
 
     eventSource.onmessage = event => {
       const data = JSON.parse(event.data);

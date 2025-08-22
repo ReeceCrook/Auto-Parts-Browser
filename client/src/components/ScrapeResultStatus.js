@@ -1,12 +1,15 @@
 import { useEffect } from 'react';
 import '../css/ScrapeResultsStatus.css';
 
+const API = process.env.REACT_APP_API_BASE;
+
+
 function ScrapeResultsStatus({ taskIds, setStatus, status }) {
   useEffect(() => {
     if (!taskIds?.length) return;
     const params = new URLSearchParams();
     taskIds.forEach(id => params.append('task_id', id));
-    const es = new EventSource(`/scrape/stream?${params.toString()}`);
+    const es = new EventSource(`${API}/scrape/stream?${params.toString()}`);
     es.onmessage = e => {
       const data = JSON.parse(e.data);
       setStatus(data);

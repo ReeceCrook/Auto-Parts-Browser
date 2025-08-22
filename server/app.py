@@ -88,6 +88,7 @@ def create_app():
             return flat
 
         def event_stream():
+            last_ping = time.time()
             try:
                 while True:
                     states = {}
@@ -142,6 +143,11 @@ def create_app():
                         }
                         yield f"data: {json.dumps(message)}\n\n"
                         break
+
+                    if time.time() - last_ping >= 15:
+                        yield ": keepalive\n\n"
+                        last_ping = time.time()
+
                     time.sleep(1)
             except Exception as e:
                 err = {"error": str(e)}

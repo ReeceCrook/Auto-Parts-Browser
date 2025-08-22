@@ -2,7 +2,7 @@ from playwright.async_api import async_playwright
 
 async def launch_browser(user_agent=None, viewport=None):
     p = await async_playwright().start()
-    browser = await p.chromium.launch(channel="chrome", headless=True, args=[
+    browser = await p.chromium.launch(headless=True, args=[
         "--no-sandbox",
         "--disable-dev-shm-usage",
         "--disable-quic",

@@ -1,6 +1,13 @@
+import os
 from playwright.async_api import async_playwright
 
-async def launch_browser(user_agent=None, viewport=None):
+ua = os.getenv(
+    "AUTO_PARTS_BROWSER_USER_AGENT",
+    "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 "
+    "(KHTML, like Gecko) Chrome/123.0.0.0 Safari/537.36"
+)
+
+async def launch_browser():
     p = await async_playwright().start()
     browser = await p.chromium.launch(headless=True, args=[
         "--no-sandbox",
@@ -12,9 +19,11 @@ async def launch_browser(user_agent=None, viewport=None):
     ])
 
     context = await browser.new_context(
-        user_agent=user_agent or "default-user-agent",
-        viewport=viewport,
-        bypass_csp=True
+        user_agent=ua,
+        viewport={"width": 1280, "height": 800},
+        locale="en-US",
+        timezone_id="America/Denver",
+        ignore_https_errors=True,
     )
 
     await context.add_init_script(

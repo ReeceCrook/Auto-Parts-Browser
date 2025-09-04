@@ -6,7 +6,7 @@ from ..celery_app import celery
 from ..Helpers.time_tracker import timer
 from ..Helpers.safe_goto import safe_goto
 from ..Helpers.browser_helper import launch_browser
-from ..Helpers.random_context import get_random_context_params
+# from ..Helpers.random_context import get_random_context_params
 from celery.utils.log import get_task_logger
 from celery.exceptions import SoftTimeLimitExceeded
 from billiard.exceptions import TimeLimitExceeded
@@ -45,11 +45,10 @@ async def async_scrape_oreilly(search, url):
 
     p = browser = context = None
     try:
-        user_agent, viewport = get_random_context_params()
         try:
             logger.info("Launching Playwright for Oreilly...")
             p, browser, context = await asyncio.wait_for(
-                launch_browser(user_agent=user_agent, viewport=viewport),
+                launch_browser(),
                 timeout=30
             )
             logger.info("Playwright launched for Oreilly")

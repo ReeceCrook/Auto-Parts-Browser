@@ -55,7 +55,7 @@ async def async_scrape_advance(search, url):
         await safe_goto(page, url)
         ele = page.get_by_role("link", name="Shop Here").first
         await ele.wait_for(state="visible", timeout=10000)
-        await link.scroll_into_view_if_needed()
+        await ele.scroll_into_view_if_needed()
 
         href = await link.get_attribute("href")
         # await ele.click()

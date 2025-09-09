@@ -1,6 +1,4 @@
-import time
-import random
-import asyncio
+import time, asyncio, re
 from ..celery_app import celery
 from ..Helpers.time_tracker import timer
 from ..Helpers.safe_goto import safe_goto
@@ -58,15 +56,29 @@ async def async_scrape_advance(search, url):
         await ele.scroll_into_view_if_needed()
 
         href = await ele.get_attribute("href")
-        # await ele.click()
-        logger.info(f"URL before href ==> {page.url}")
         await page.goto(href, wait_until="domcontentloaded", timeout=30000)
-        logger.info(f"URL after href ==> {page.url}")
 
-        await page.wait_for_selector('.css-l3rx45', timeout=60000)
-        store_elements = await page.query_selector_all('.css-l3rx45')
-        store = [await element.inner_text() for element in store_elements]
-        data = {"url": url, "title": await page.title(), "store": store}
+        STREET_RE = re.compile(r"^\s*\d{1,6}\s+[\w\.\-#'\s]+$", re.I)
+        CITY_ST_ZIP_RE = re.compile(r"^[A-Za-z][A-Za-z\s\.\-']+,\s*[A-Z]{2}\s*\d{5}(?:-\d{4})?$")
+
+        root = page.locator("main, [role='main'], body").first
+
+        address_container = root.locator("div").filter(
+            has=root.locator("div", has_text=STREET_RE)
+        ).filter(
+            has=root.locator("div", has_text=CITY_ST_ZIP_RE)
+        ).first
+
+        await address_container.wait_for(state="visible", timeout=15000)
+
+        street_ele = address_container.locator(":scope div", has_text=STREET_RE).first
+        city_ele = address_container.locator(":scope div", has_text=CITY_ST_ZIP_RE).first
+
+        street = (await street_ele.inner_text()).strip()
+        city_st_zip = (await city_ele.inner_text()).strip()
+
+        logger.info(f"EXTRACTED ADDRESS: {street} | {city_st_zip}")
+        data = {"url": page.url, "title": await page.title(), "store": [street, city_st_zip]}
 
         await safe_goto(page, f"https://shop.advanceautoparts.com/web/SearchResults?searchTerm={search}")
         await page.wait_for_selector(".css-rps5gr", timeout=60000)

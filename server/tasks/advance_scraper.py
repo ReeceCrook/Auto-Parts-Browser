@@ -57,10 +57,10 @@ async def async_scrape_advance(search, url):
         await ele.wait_for(state="visible", timeout=10000)
         await ele.scroll_into_view_if_needed()
 
-        href = await link.get_attribute("href")
+        href = await ele.get_attribute("href")
         # await ele.click()
         logger.info(f"URL before href ==> {page.url}")
-        await page.goto(href, wait_until="domcontentloaded", timeout=30_000)
+        await page.goto(href, wait_until="domcontentloaded", timeout=30000)
         logger.info(f"URL after href ==> {page.url}")
 
         await page.wait_for_selector('.css-l3rx45', timeout=60000)

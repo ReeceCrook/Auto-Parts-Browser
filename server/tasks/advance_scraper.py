@@ -53,8 +53,11 @@ async def async_scrape_advance(search, url):
         scrape_start = time.time()
 
         await safe_goto(page, url)
-        ele = page.get_by_role("link", name="Shop Here").first()
+        ele = page.get_by_role("link", name="Shop Here").first
+        await ele.wait_for(state="attached", timeout=10000)
+        logger.info(f"URL before ele.click ==> {page.url}")
         await ele.click()
+        logger.info(f"URL after ele.click ==> {page.url}")
         await page.wait_for_selector('.css-l3rx45', timeout=60000)
         store_elements = await page.query_selector_all('.css-l3rx45')
         store = [await element.inner_text() for element in store_elements]
